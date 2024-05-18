@@ -4,6 +4,8 @@ Simulate a Basic Turing machine
 the  operations length is 2, the first element is the symbol to write, the second element is the direction to move
 
 only support two directions: "L" and "R"
+
+do not support * match for any symbol
 """
 
 

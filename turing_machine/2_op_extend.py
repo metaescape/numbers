@@ -1,7 +1,5 @@
 """
-Simulate a Basic Turing machine
-
-the  operations length is variable
+Simulate a Turing machine , the length operation in transiction rule is variable
 
 support two directions: "L" and "R", Writing symbol support "e", "x", "0", "1", None(erase)
 
@@ -23,6 +21,10 @@ class TuringMachine:
         self.current_state = initial_state
         self.max_right = 0
         self.history = []
+        self.fill_len = 3
+
+    def set_fill_len(self, fill_len):
+        self.fill_len = fill_len
 
     @property
     def m_configuration(self):
@@ -64,7 +66,7 @@ class TuringMachine:
         else:
             tape[self.head_position] = f"[{tape[self.head_position]}]"
             s = "".join(tape)
-            return f"{m_config:>3} | {s}"
+            return f"{m_config:>{self.fill_len}} | {s}"
 
     def get_sequence(self):
         result = []
@@ -184,7 +186,7 @@ class Table:
             self.table[(m_config, symbol)] = value
 
 
-def create_1_3_table():
+def test_1_3_machine():
     """
     The variation of first example from Turing Paper 1936, this is the description of a turing machine
     """
@@ -194,10 +196,14 @@ def create_1_3_table():
     bcek_table.add_rule(TransitionRule("b", "0", ["R", "R", "1"], "b"))
     bcek_table.add_rule(TransitionRule("b", "1", ["R", "R", "0"], "b"))
 
-    return bcek_table
+    tm = TuringMachine(bcek_table, "b")
+    print("run 1/3 turing machine")
+    tm.run(steps=20)
+    print(tm.get_sequence())
+    print(tm.get_decimal())
 
 
-def create_transcendental_table():
+def test_transcendental_machine():
     """
     Turing machine for print 001011011101111...
     The second example from Turing Paper 1936
@@ -219,20 +225,44 @@ def create_transcendental_table():
     for rule in description:
         table.add_rule(TransitionRule(*rule))
 
-    return table
-
-
-if __name__ == "__main__":
-
-    tm = TuringMachine(create_1_3_table(), "b")
-    print("run 1/3 turing machine")
-    tm.run(steps=20)
-    print(tm.get_sequence())
-    print(tm.get_decimal())
-
-    tm = TuringMachine(create_transcendental_table(), "b")
+    tm = TuringMachine(table, "b")
     print("run transcendental turing machine")
     tm.run(steps=80, verbose=True)
     print(tm.get_sequence())
     print(tm.get_decimal())
     print(tm.get_history())
+
+
+def test_increment_machine():
+    """
+    Turing machine for increment binary number
+    """
+    table = Table()
+    description = [
+        ("begin", None, ["e", "R", "R", "0"], "increment"),
+        ("increment", "0", ["1"], "2left"),
+        ("increment", "1", ["0", "R", "R"], "increment"),
+        ("increment", None, ["1"], "2left"),
+        ("2left", "0", ["L", "L"], "2left"),
+        ("2left", "1", ["L", "L"], "2left"),
+        ("2left", "e", ["R", "R"], "increment"),
+    ]
+    for rule in description:
+        table.add_rule(TransitionRule(*rule))
+
+    print("run transcendental turing machine")
+    for steps in range(1, 40):
+        tm = TuringMachine(table, "begin")
+        tm.fill_len = 10
+
+        tm.run(steps=steps)
+
+        # reverse the sequence
+        print(int(tm.get_sequence()[::-1], 2))
+
+
+if __name__ == "__main__":
+    test_1_3_machine()
+
+    test_transcendental_machine()
+    test_increment_machine()
