@@ -1,7 +1,7 @@
 """
 Simulate a Turing machine , the length operation in transiction rule is variable
 
-support two directions: "L" and "R", Writing symbol support "e", "x", "0", "1", None(erase)
+support two directions: "L" and "R", Writing symbol support "$"(start), "x", "0", "1", "_"(erase or None)
 
 support match any symbol with "*"
 
@@ -15,7 +15,7 @@ class TuringMachine:
     """
 
     def __init__(self, table, initial_state):
-        self.tape = [None] * 2000
+        self.tape = ["_"] * 2000
         self.head_position = 0
         self.table = table
         self.current_state = initial_state
@@ -54,7 +54,7 @@ class TuringMachine:
         point: left or bracket
         """
         tape = self.tape[: self.max_right + 1]
-        return [ele if ele else "_" for ele in tape]
+        return tape
 
     def str(self, turing=False):
         tape = self.get_tape()
@@ -103,7 +103,7 @@ class TuringMachine:
                     self.max_right = max(self.head_position, self.max_right)
                     if self.head_position >= len(self.tape):
                         length_before = len(self.tape)
-                        self.tape.extend([None] * 2000)
+                        self.tape.extend(["_"] * 2000)
                         print(
                             f"Warning: head position is out of tape,"
                             f"extend tape from length {length_before} to {len(self.tape)}"
@@ -136,7 +136,7 @@ class TuringMachine:
 
 class TransitionRule:
 
-    def __init__(self, m_config, symbol, operations: list, next_m_config):
+    def __init__(self, m_config, symbols, operations: list, next_m_config):
         """
         m_config: 当前状态
         symbol: 当前读取的符号, 如果是 *, 表示任意符号
@@ -145,12 +145,12 @@ class TransitionRule:
 
         """
         self.m_config = m_config
-        self.symbol = symbol
+        self.symbols = symbols
         self.operations = operations
         self.next_m_config = next_m_config
 
     def configuration(self):
-        return (self.m_config, self.symbol)
+        return (self.m_config, self.symbols)
 
     def behavior(self):
         return self.operations, self.next_m_config
@@ -165,24 +165,24 @@ class Table:
         self.table = {}
 
     def __contains__(self, key):
-        m_config, symbol = key
-        if m_config in self.table and symbol:
-            # match any symbol
+        m_config, _ = key
+        if key in self.table:
             return True
-        return key in self.table
+        return (m_config, "*") in self.table
 
     def __getitem__(self, key):
-        m_config, symbol = key
-        if m_config in self.table and symbol:
-            return self.table[m_config]
-        return self.table[key]
+        m_config, _ = key
+        if key in self.table:
+            return self.table[key]
+        return self.table[(m_config, "*")]
 
     def add_rule(self, rule: TransitionRule):
-        m_config, symbol = rule.configuration()
+        m_config, symbols = rule.configuration()
         value = rule.behavior()
-        if symbol == "*":
-            self.table[m_config] = value
-        else:
+        symbols = [symbols] if not symbols else symbols
+        if "*" in symbols:
+            assert symbols[-1] == "*", "* shold not be in last position"
+        for symbol in symbols:
             self.table[(m_config, symbol)] = value
 
 
@@ -192,7 +192,7 @@ def test_1_3_machine():
     """
     bcek_table = Table()
 
-    bcek_table.add_rule(TransitionRule("b", None, ["0"], "b"))
+    bcek_table.add_rule(TransitionRule("b", "_", ["0"], "b"))
     bcek_table.add_rule(TransitionRule("b", "0", ["R", "R", "1"], "b"))
     bcek_table.add_rule(TransitionRule("b", "1", ["R", "R", "0"], "b"))
 
@@ -211,16 +211,16 @@ def test_transcendental_machine():
 
     table = Table()
     description = [
-        ("b", None, ["e", "R", "e", "R", "0", "R", "R", "0", "L", "L"], "o"),
+        ("b", "_", ["$", "R", "$", "R", "0", "R", "R", "0", "L", "L"], "o"),
         ("o", "1", ["R", "x", "L", "L", "L"], "o"),
         ("o", "0", [], "q"),
         ("q", "*", ["R", "R"], "q"),
-        ("q", None, ["1", "L"], "p"),
-        ("p", "x", [None, "R"], "q"),
-        ("p", "e", ["R"], "f"),
-        ("p", None, ["L", "L"], "p"),
+        ("q", "_", ["1", "L"], "p"),
+        ("p", "x", ["_", "R"], "q"),
+        ("p", "$", ["R"], "f"),
+        ("p", "_", ["L", "L"], "p"),
         ("f", "*", ["R", "R"], "f"),
-        ("f", None, ["0", "L", "L"], "o"),
+        ("f", "_", ["0", "L", "L"], "o"),
     ]
     for rule in description:
         table.add_rule(TransitionRule(*rule))
@@ -239,13 +239,12 @@ def test_increment_machine():
     """
     table = Table()
     description = [
-        ("begin", None, ["e", "R", "R", "0"], "increment"),
+        ("begin", "_", ["$", "R", "R", "0"], "increment"),
         ("increment", "0", ["1"], "2left"),
         ("increment", "1", ["0", "R", "R"], "increment"),
-        ("increment", None, ["1"], "2left"),
-        ("2left", "0", ["L", "L"], "2left"),
-        ("2left", "1", ["L", "L"], "2left"),
-        ("2left", "e", ["R", "R"], "increment"),
+        ("increment", "_", ["1"], "2left"),
+        ("2left", "01", ["L", "L"], "2left"),
+        ("2left", "$", ["R", "R"], "increment"),
     ]
     for rule in description:
         table.add_rule(TransitionRule(*rule))
@@ -261,8 +260,94 @@ def test_increment_machine():
         print(int(tm.get_sequence()[::-1], 2))
 
 
+def test_sqrt_root_machine():
+    """
+    Turing machine for find sqrt root
+    """
+
+    table = Table()
+    description = [
+        ("begin", "_", ["$", "R", "$", "R", "1"], "new"),
+        ("new", "$", ["R"], "mark-digits"),
+        ("new", "*", ["L"], "new"),
+        ("mark-digits", "01", ["R", "x", "R"], "mark-digits"),
+        ("mark-digits", "_", ["R", "z", "R", "R", "r"], "find-x"),
+        ("find-x", "x", ["_"], "first-r"),
+        ("find-x", "$", [], "find-digits"),
+        ("find-x", "*", ["L", "L"], "find-x"),
+        ("first-r", "r", ["R", "R"], "last-r"),
+        ("first-r", "*", ["R", "R"], "first-r"),
+        ("last-r", "r", ["R", "R"], "last-r"),
+        ("last-r", "_", ["r", "R", "R", "r"], "find-x"),
+        ("find-digits", "$", ["R", "R"], "find-1st-digit"),
+        ("find-digits", "*", ["L", "L"], "find-digits"),
+        ("find-1st-digit", "xy", ["L"], "found-1st-digit"),
+        ("find-1st-digit", "z", ["L"], "found-2nd-digit"),
+        ("find-1st-digit", "_", ["R", "R"], "find-1st-digit"),
+        ("found-1st-digit", "0", ["R"], "add-zero"),
+        ("found-1st-digit", "1", ["R", "R", "R"], "find-2nd-digit"),
+        ("find-2nd-digit", "xy", ["L"], "found-2nd-digit"),
+        ("find-2nd-digit", "_", ["R", "R"], "find-2nd-digit"),
+        ("found-2nd-digit", "0", ["R"], "add-zero"),
+        ("found-2nd-digit", "1_", ["R"], "add-one"),
+        ("add-zero", "r", ["s"], "add-finished"),
+        ("add-zero", "u", ["v"], "add-finished"),
+        ("add-zero", "*", ["R", "R"], "add-zero"),
+        ("add-one", "r", ["v"], "add-finished"),
+        ("add-one", "u", ["s", "R", "R"], "carry"),
+        ("add-one", "*", ["R", "R"], "add-one"),
+        ("carry", "r", ["u"], "add-finished"),
+        ("carry", "_", ["u"], "new-digit-is-zero"),
+        ("carry", "u", ["r", "R", "R"], "carry"),
+        ("add-finished", "$", ["R", "R"], "erase-old-x"),
+        ("add-finished", "*", ["L", "L"], "add-finished"),
+        ("erase-old-x", "x", ["_", "L", "L"], "print-new-x"),
+        ("erase-old-x", "z", ["y", "L", "L"], "print-new-x"),
+        ("erase-old-x", "*", ["R", "R"], "erase-old-x"),
+        ("print-new-x", "$", ["R", "R"], "erase-old-y"),
+        ("print-new-x", "y", ["z"], "find-digits"),
+        ("print-new-x", "_", ["x"], "find-digits"),
+        ("erase-old-y", "y", ["_", "L", "L"], "print-new-y"),
+        ("erase-old-y", "*", ["R", "R"], "erase-old-y"),
+        ("print-new-y", "$", ["R"], "new-digit-is-one"),
+        ("print-new-y", "*", ["y", "R"], "reset-new-x"),
+        ("reset-new-x", "_", ["R", "x"], "flag-result-digits"),
+        ("reset-new-x", "*", ["R", "R"], "reset-new-x"),
+        ("flag-result-digits", "s", ["t", "R", "R"], "unflag-result-digits"),
+        ("flag-result-digits", "v", ["w", "R", "R"], "unflag-result-digits"),
+        ("flag-result-digits", "*", ["R", "R"], "flag-result-digits"),
+        ("unflag-result-digits", "s", ["r", "R", "R"], "unflag-result-digits"),
+        ("unflag-result-digits", "v", ["u", "R", "R"], "unflag-result-digits"),
+        ("unflag-result-digits", "*", [], "find-digits"),
+        ("new-digit-is-zero", "$", ["R"], "print-zero-digit"),
+        ("new-digit-is-zero", "*", ["L"], "new-digit-is-zero"),
+        ("print-zero-digit", "01", ["R", "_", "R"], "print-zero-digit"),
+        ("print-zero-digit", "_", ["0", "R", "R", "R"], "cleanup"),
+        ("new-digit-is-one", "$", ["R"], "print-one-digit"),
+        ("new-digit-is-one", "*", ["L"], "new-digit-is-one"),
+        ("print-one-digit", "01", ["R", "_", "R"], "print-one-digit"),
+        ("print-one-digit", "_", ["1", "R", "R", "R"], "cleanup"),
+        ("cleanup", "_", [], "new"),
+        ("cleanup", "*", ["_", "R", "R"], "cleanup"),
+    ]
+
+    for rule in description:
+        table.add_rule(TransitionRule(*rule))
+
+    print("run sqrt(2) turing machine")
+
+    tm = TuringMachine(table, "begin")
+    tm.fill_len = 18
+    tm.run(steps=10000, verbose=False)
+    # tm.run(steps=400, verbose=True) # for debug
+    print(tm.get_sequence())
+    print(tm.get_decimal() * 2)
+
+
 if __name__ == "__main__":
     test_1_3_machine()
 
     test_transcendental_machine()
     test_increment_machine()
+
+    test_sqrt_root_machine()
