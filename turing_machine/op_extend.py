@@ -346,8 +346,6 @@ def test_sqrt_root_machine():
 
 if __name__ == "__main__":
     test_1_3_machine()
-
     test_transcendental_machine()
     test_increment_machine()
-
     test_sqrt_root_machine()
