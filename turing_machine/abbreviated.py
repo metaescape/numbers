@@ -1,5 +1,5 @@
 """
-Manually Implement the abbreviated Tables
+Manually Implement the abbreviated Tables and a Turing Machine with runtime transition rules
 """
 
 from turing_machine.op_extend import Table, TransitionRule, TuringMachine
@@ -69,6 +69,9 @@ class SkelotonCompiler(type):
     def compile(cls):
         """
         generate machine code
+        - build the alias map, then replace the object with the final alias obj(the public obj of the abbreviated table)
+        - replace the state obj to a string (public name of the abbreviated table)
+        - generate the low level transition rules
         """
         table = Table()
         rules = []
@@ -76,11 +79,13 @@ class SkelotonCompiler(type):
         alias_map = cls.build_alias_map()
 
         for abb in cls._instances2name.keys():
+
             for symbol, operations, next_m_config in abb.transitions:
                 if abb in alias_map:
-                    abb = get_root(alias_map, abb)
+                    abb = cls.get_root(alias_map, abb)
+
                 if next_m_config in alias_map:
-                    next_m_config = get_root(alias_map, next_m_config)
+                    next_m_config = cls.get_root(alias_map, next_m_config)
                 rules.append([abb, symbol, operations, next_m_config])
 
         # replace the python object with the m-config name
@@ -103,11 +108,12 @@ class SkelotonCompiler(type):
 
         return table
 
+    @classmethod
+    def get_root(cls, dict, state):
+        while state in dict:
+            state = dict[state]
 
-def get_root(dict, key):
-    while key in dict:
-        key = dict[key]
-    return key
+        return state
 
 
 class abbreviatedTable(metaclass=SkelotonCompiler):
@@ -127,8 +133,8 @@ class abbreviatedTable(metaclass=SkelotonCompiler):
 
 class Find(abbreviatedTable):
     """
-    find the first occurrence of alpha in the tape and transition to state1
-    if alpha is not found, transition to state2
+    find the first occurrence of alpha in the marked Figure square ont the tape
+    transfer to state1 if alpha is found, otherwise transfer to state2
     """
 
     def __init__(self, state1, state2, alpha):
@@ -142,11 +148,11 @@ class Find1(abbreviatedTable):
         super().__init__()
 
         self.add_transition(alpha, [], state1)
-        self.add_transition("_", ["R"], Find2(state1, state2, alpha))
+        self.add_transition("_", ["R"], Miss1(state1, state2, alpha))
         self.add_transition("*", ["R"], self)
 
 
-class Find2(abbreviatedTable):
+class Miss1(abbreviatedTable):
     def __init__(self, state1, state2, alpha):
         super().__init__()
 
@@ -179,12 +185,75 @@ class Erase1(abbreviatedTable):
         self.add_transition(alpha, ["_"], state1)
 
 
-def generate_builtin_lib():
+class PrintEnd(abbreviatedTable):
+    def __init__(self, state1, beta):
+        super().__init__()
+        self.set_alias(Find(PrintEnd1(state1, beta), state1, "$"))
+
+
+class PrintEnd1(abbreviatedTable):
+    def __init__(self, state1, beta):
+        super().__init__()
+        self.add_transition("_", [beta], state1)
+        self.add_transition("*", ["R", "R"], self)
+
+
+class Left(abbreviatedTable):
+    def __init__(self, state1):
+        super().__init__()
+        self.add_transition("*", ["L"], state1)
+
+
+class Right(abbreviatedTable):
+    def __init__(self, state1):
+        super().__init__()
+        self.add_transition("*", ["R"], state1)
+
+
+class FindThenLeft(abbreviatedTable):
+    def __init__(self, state1, state2, alpha):
+        super().__init__()
+        self.set_alias(Find(Left(state1), state2, alpha))
+
+
+class FindThenRight(abbreviatedTable):
+    def __init__(self, state1, state2, alpha):
+        super().__init__()
+        self.set_alias(Find(Right(state1), state2, alpha))
+
+
+class Copy(abbreviatedTable):
+    def __init__(self, state1, state2, mark):
+        super().__init__()
+        self.set_alias(FindThenLeft(Copy1(state1), state2, mark))
+
+
+class Copy1(abbreviatedTable):
+    def __init__(self, state1):
+        super().__init__()
+        self.add_transition("1", [], PrintEnd(state1, "1"))
+        self.add_transition("0", [], PrintEnd(state1, "0"))
+
+
+class CopyThenErase(abbreviatedTable):
+    def __init__(self, *args):
+        super().__init__()
+        if len(args) == 3:
+            state1, state2, alpha = args
+            self.set_alias(Copy(Erase(state1, state2, alpha), state2, alpha))
+        elif len(args) == 2:
+            state1, alpha = args
+            self.set_alias(
+                CopyThenErase(CopyThenErase(state1, alpha), state1, alpha)
+            )
+
+
+def generate_builtin_library():
     find = Find("a", "b", "x")
     erase = Erase("a", "b", "x")
 
 
-def test_compile_erase_1s():
+def test_compile_erase():
     from pprint import pprint
 
     SkelotonCompiler.reset()
@@ -201,11 +270,86 @@ def test_compile_erase_1s():
 
     pprint(table.table)
     tm = TuringMachine(table, "b")
-    tm.run(steps=100, verbose=True)
+    tm.run(steps=30, verbose=True)
+    print(tm.get_tape())
+    return tm
+
+
+def test_compile_print_end():
+    from pprint import pprint
+
+    pprint("test_compile_print_end")
+
+    SkelotonCompiler.reset()
+    e = PrintEnd("a", "1")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "0", "R", "x"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=11, verbose=True)
+    print(tm.get_tape())
+    return tm
+
+
+def test_compile_find_and_move():
+    from pprint import pprint
+
+    pprint("test_find_and_move")
+
+    SkelotonCompiler.reset()
+    e = FindThenLeft(FindThenRight("a", "b", "x"), "b", "0")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "0", "R", "x"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=16, verbose=True)
+    print(tm.get_tape())
+    return tm
+
+
+def test_compile_copy_erase():
+    from pprint import pprint
+
+    pprint("test copy marked and erase mark")
+
+    SkelotonCompiler.reset()
+    e = CopyThenErase("a", "x")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "0", "R", "x"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=70, verbose=True)
     print(tm.get_tape())
     return tm
 
 
 if __name__ == "__main__":
 
-    test_compile_erase_1s()
+    test_compile_erase()
+    test_compile_print_end()
+    test_compile_find_and_move()
+    test_compile_copy_erase()
