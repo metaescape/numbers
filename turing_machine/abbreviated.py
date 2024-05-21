@@ -224,6 +224,9 @@ class FindThenRight(abbreviatedTable):
 
 class Copy(abbreviatedTable):
     def __init__(self, state1, state2, mark):
+        """
+        copy the marked figure to the end empty figure of the tape
+        """
         super().__init__()
         self.set_alias(FindThenLeft(Copy1(state1), state2, mark))
 
@@ -239,13 +242,97 @@ class CopyThenErase(abbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 3:
+            # copy the marked figure to the end empty figure of the tape and erase the mark
             state1, state2, alpha = args
             self.set_alias(Copy(Erase(state1, state2, alpha), state2, alpha))
         elif len(args) == 2:
+            # copy all marked figures to the end empty figures of the tape and erase marks
             state1, alpha = args
             self.set_alias(
                 CopyThenErase(CopyThenErase(state1, alpha), state1, alpha)
             )
+
+
+class Replace(abbreviatedTable):
+    def __init__(self, *args):
+        super().__init__()
+        if len(args) == 4:
+            #  replaces the first  alpha by beta and -> state1 or -> state2 if there is no alpha
+            state1, state2, alpha, beta = args
+            self.set_alias(Find(Replace1(state1, beta), state2, alpha))
+        elif len(args) == 3:
+            # replaces all the occurrence of alpha by beta and -> state1
+            state1, alpha, beta = args
+            self.set_alias(
+                Replace(Replace(state1, alpha, beta), state1, alpha, beta)
+            )
+
+
+class Replace1(abbreviatedTable):
+    def __init__(self, state1, beta):
+        super().__init__()
+        self.add_transition("*", ["_", beta], state1)
+
+
+class CopyThenReplace(abbreviatedTable):
+    """
+    This is the same as copy, this is just a test to the combination of the abbreviated tables
+    """
+
+    def __init__(self, *args):
+        super().__init__()
+        if len(args) == 3:
+            state1, state2, mark = args
+            self.set_alias(
+                Copy(Replace(state1, state2, mark, mark), state2, mark)
+            )
+        elif len(args) == 2:
+            state1, mark = args
+            self.set_alias(
+                CopyThenReplace(
+                    CopyThenReplace(state1, mark),
+                    CopyThenReplace(state1, mark, mark),
+                    mark,
+                )
+            )
+
+
+class Compare(abbreviatedTable):
+    def __init__(self, state1, state2, mark1, mark2):
+        """
+        compare the marked figures and transfer to state1 if they are equal, otherwise transfer to state2
+
+        if mark1 and mark2 is not found, transfer to state1, if one of them is not found, transfer to state2
+        """
+        super().__init__()
+        self.set_alias(
+            FindThenLeft(Compare1(state1, state2, mark2), state1, mark1)
+        )
+
+
+class Compare1(abbreviatedTable):
+    def __init__(self, state1, state2, mark2):
+        """
+        find mark1
+        """
+        super().__init__()
+        self.add_transition(
+            "0", [], FindThenLeft(Compare2(state1, state2, "0"), state2, mark2)
+        )
+        self.add_transition(
+            "1", [], FindThenLeft(Compare2(state1, state2, "1"), state2, mark2)
+        )
+
+
+class Compare2(abbreviatedTable):
+    def __init__(self, state1, state2, alpha):
+        super().__init__()
+        if alpha == "0":
+            self.add_transition("0", [], state1)
+            self.add_transition("*", [], state2)
+        elif alpha == "1":
+            self.add_transition("1", [], state1)
+            self.add_transition("*", [], state2)
 
 
 def generate_builtin_library():
@@ -347,9 +434,104 @@ def test_compile_copy_erase():
     return tm
 
 
+def test_compile_replace():
+    from pprint import pprint
+
+    pprint("test replace all alpha")
+
+    SkelotonCompiler.reset()
+    e = Replace("a", "0", "1")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "0", "R", "x"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=30, verbose=True)
+    print(tm.get_tape())
+    return tm
+
+
+def test_compile_copy_replace():
+    from pprint import pprint
+
+    pprint("test copy then replace")
+
+    SkelotonCompiler.reset()
+    e = CopyThenReplace("a", "x")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "0", "R", "x"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=70, verbose=True)
+    print(tm.get_tape())
+    return tm
+
+
+def test_compile_compare():
+    from pprint import pprint
+
+    pprint("test compare and success")
+
+    SkelotonCompiler.reset()
+    e = Compare("a", "c", "x", "y")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "0", "R", "y"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=22, verbose=True)
+    print(tm.get_tape())
+    print(tm.m_configuration)
+
+    pprint("test compare and failed")
+    SkelotonCompiler.reset()
+    e = Compare("a", "c", "x", "y")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "1", "R", "y"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=22, verbose=True)
+    print(tm.get_tape())
+    print(tm.m_configuration)
+    return tm
+
+
 if __name__ == "__main__":
 
     test_compile_erase()
     test_compile_print_end()
     test_compile_find_and_move()
     test_compile_copy_erase()
+    test_compile_replace()
+    test_compile_copy_replace()
+    test_compile_compare()
