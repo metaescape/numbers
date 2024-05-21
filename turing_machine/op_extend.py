@@ -3,9 +3,9 @@ Simulate a Turing machine , the length of operations in transition rules is vari
 
 support two directions: "L" and "R", Writing symbol support "$"(start), "x", "0", "1", "_"(erase or None)
 
-support match any symbol with "*"
+support match any symbol with "*", also with pretty print for complete configuration
 
-also with pretty print for complete configuration
+This is almost the reproduction of chapter 3 "Examples of computing machines" in the Turing's 1936 paper. 
 
 Author: Metaesc
 Email: metaescape@foxmail.com
@@ -142,10 +142,10 @@ class TransitionRule:
 
     def __init__(self, m_config, symbols, operations: list, next_m_config):
         """
-        m_config: 当前状态
-        symbol: 当前读取的符号, 如果是 *, 表示任意符号
-        operations: 操作列表，包括写入的符号、方向
-        next_m_config: 下一个状态
+        m_config: current state/m-configuration
+        symbol: current symbol in the machine/under the reader, * match all symbols
+        operations: R,L or symbol to write, "_" stands for erase/blanks
+        next_m_config: next state/m-configuration
 
         """
         self.m_config = m_config
@@ -266,7 +266,7 @@ def test_increment_machine():
 
 def test_sqrt_root_machine():
     """
-    Turing machine for find sqrt root
+    Turing machine for find sqrt root, reproduce the example in chapter 6 of the book "Annoted Turing"
     """
 
     table = Table()
