@@ -186,6 +186,10 @@ class Erase1(abbreviatedTable):
 
 
 class PrintEnd(abbreviatedTable):
+    """
+    append alpha to the end of tape (first nonempty Figure square)
+    """
+
     def __init__(self, success, beta):
         super().__init__()
         self.set_alias(Find(PrintEnd1(success, beta), success, "$"))
@@ -243,13 +247,13 @@ class CopyThenErase(abbreviatedTable):
         super().__init__()
         if len(args) == 3:
             # copy the markeded figure to the end empty figure of the tape and erase the x
-            success, fail, alpha = args
-            self.set_alias(Copy(Erase(success, fail, alpha), fail, alpha))
+            success, fail, x = args
+            self.set_alias(Copy(Erase(success, fail, x), fail, x))
         elif len(args) == 2:
             # copy all marked figures to the end empty figures of the tape and erase all x
-            success, alpha = args
+            success, x = args
             self.set_alias(
-                CopyThenErase(CopyThenErase(success, alpha), success, alpha)
+                CopyThenErase(CopyThenErase(success, x), success, x)
             )
 
 
@@ -380,6 +384,47 @@ class FindRight1(abbreviatedTable):
             success, alpha = args
             self.add_transition("*", ["L"], self)
             self.add_transition(alpha, [], success)
+
+
+class PrintEndTwo(abbreviatedTable):
+    """
+    append alpha to the end of tape, then append beta to the end of the tape
+    """
+
+    def __init__(self, success, alpha, beta):
+        super().__init__()
+        self.set_alias(PrintEnd(PrintEnd(success, beta), alpha))
+
+
+class CopyThenEraseTwo(abbreviatedTable):
+    """
+    copy all the figures marked by x to the end of tape then erase all x
+
+    copy all the figures makred by y to the end of tape then erase all y
+    """
+
+    def __init__(self, success, x, y):
+        super().__init__()
+        self.set_alias(CopyThenErase(CopyThenErase(success, y), x))
+
+
+class CopyThenEraseThree(abbreviatedTable):
+    """
+    copy all the figures marked by x to the end of tape then erase all x
+
+    copy all the figures makred by y to the end of tape then erase all y
+
+    copy all the figures makred by z to the end of tape then erase all z
+    """
+
+    def __init__(self, success, x, y, z):
+        super().__init__()
+        self.set_alias(CopyThenErase(CopyThenEraseTwo(success, y, z), x))
+
+
+class EraseAllMark(abbreviatedTable):
+    def __init__(self, success):
+        super().__init__()
 
 
 def generate_builtin_library():
@@ -642,6 +687,42 @@ def test_compile_find_right():
     return tm
 
 
+def test_compile_copy_then_erase_three():
+    from pprint import pprint
+
+    pprint("test copy all figures marked as x,y,z to the end of tape")
+
+    SkelotonCompiler.reset()
+    e = CopyThenEraseThree("success", "x", "y", "z")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule("b", "_", ["$", "R", "$", "R", "0", "R", "x", "R"], "c")
+    )
+    table.add_rule(
+        TransitionRule(
+            "c",
+            "_",
+            ["1", "R", "y", "R", "1", "R", "y", "R"],
+            "d",
+        )
+    )
+    table.add_rule(
+        TransitionRule(
+            "d",
+            "_",
+            ["0", "R", "z", "R", "0", "R", "z", "R", "0", "R", "z", "R"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=519, verbose=False)
+    print(tm.get_sequence())
+    assert tm.m_configuration == "success", tm.m_configuration
+    return tm
+
+
 if __name__ == "__main__":
 
     test_compile_erase()
@@ -653,3 +734,4 @@ if __name__ == "__main__":
     test_compile_compare()
     test_compile_compare_then_erase_all()
     test_compile_find_right()
+    test_compile_copy_then_erase_three()
