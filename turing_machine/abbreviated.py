@@ -27,6 +27,7 @@ class SkelotonCompiler(type):
     _instances2name: dict = {}
     cnt = 1
     obj2name = {}
+    vocab = {"0", "1"}
 
     def __call__(cls, *args, **kwargs):
         assert kwargs == {}, "SingletonMeta does not support kwargs"
@@ -49,6 +50,10 @@ class SkelotonCompiler(type):
         cls._instances2name = {}
         cls.cnt = 1
         cls.obj2name = {}
+
+    @classmethod
+    def set_vocab(cls, vocab):
+        cls.vocab = vocab
 
     @classmethod
     def get_m_configs(cls):
@@ -249,8 +254,8 @@ class Copy(abbreviatedTable):
 class Copy1(abbreviatedTable):
     def __init__(self, success):
         super().__init__()
-        self.add_transition("1", [], PrintEnd(success, "1"))
-        self.add_transition("0", [], PrintEnd(success, "0"))
+        for alpha in SkelotonCompiler.vocab:  # current support "0", "1"
+            self.add_transition(alpha, [], PrintEnd(success, alpha))
 
 
 class CopyThenErase(abbreviatedTable):
@@ -327,23 +332,17 @@ class Compare1(abbreviatedTable):
         find x
         """
         super().__init__()
-        self.add_transition(
-            "0", [], FindThenLeft(Compare2(success, fail, "0"), fail, y)
-        )
-        self.add_transition(
-            "1", [], FindThenLeft(Compare2(success, fail, "1"), fail, y)
-        )
+        for alpha in SkelotonCompiler.vocab:
+            self.add_transition(
+                alpha, [], FindThenLeft(Compare2(success, fail, "0"), fail, y)
+            )
 
 
 class Compare2(abbreviatedTable):
     def __init__(self, success, fail, alpha):
         super().__init__()
-        if alpha == "0":
-            self.add_transition("0", [], success)
-            self.add_transition("*", [], fail)
-        elif alpha == "1":
-            self.add_transition("1", [], success)
-            self.add_transition("*", [], fail)
+        self.add_transition(alpha, [], success)
+        self.add_transition("*", [], fail)
 
 
 class CompareThenErase(abbreviatedTable):

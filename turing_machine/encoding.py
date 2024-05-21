@@ -29,10 +29,11 @@ try:
         SkelotonCompiler,
         FindRight,
         EraseAllMark,
+        Compare,
     )
 except:
     from op_extend import Table, TransitionRule, TuringMachine
-    from abbreviated import SkelotonCompiler, FindRight, EraseAllMark
+    from abbreviated import SkelotonCompiler, FindRight, EraseAllMark, Compare
 
 
 class Encoder:
@@ -49,7 +50,10 @@ class Encoder:
         self.vocab = figure_vocab | erase_vocab
         self.std_map = self.build_symbol_map()
         self.max_m_config_number = self.get_max_m_config_number()
-        self.symbol_expanded_table = self.expand_regex_in_table()
+        self.symbol_expanded_table = self.expand_regex_in_table(table.table)
+        self.m_config_std_table = self.standardize_m_configuration(
+            self.symbol_expanded_table.table, self.max_m_config_number + 1
+        )
 
     def build_symbol_map(self):
         std_code_map = {
@@ -90,12 +94,12 @@ class Encoder:
 
         return rules
 
-    def expand_regex_in_table(self):
+    def expand_regex_in_table(self, table: dict):
         """
         Expand the * symbol in the table
         """
         new_table = Table()
-        for key, value in self.origin_table.table.items():
+        for key, value in table.items():
             rule = TransitionRule(key[0], key[1], value[0], value[1])
             if "*" in rule.symbols:
                 rules = self.expand_any_regex_symbol(rule)
@@ -106,16 +110,29 @@ class Encoder:
 
         return new_table
 
-    def standardize_m_configuration(self):
+    def standardize_m_configuration(self, table: dict, cnt: int):
         """
         make sure the m_configuration is in the form of q1, q2, q3, ...
         """
+        self.name_map = {}
         new_table = Table()
-        for key, value in self.origin_table.table.items():
+        for key, value in table.items():
             m_config, symbol = key
-            new_m_config = self.encode_m_config(m_config)
-            new_key = (new_m_config, symbol)
-            new_table.table[new_key] = value
+            operations, next_m_config = value
+            if not m_config.startswith("q"):
+                if m_config not in self.name_map:
+                    self.name_map[m_config] = "q" + str(cnt)
+                    cnt += 1
+                m_config = self.name_map[m_config]
+            if not next_m_config.startswith("q"):
+                if next_m_config not in self.name_map:
+                    self.name_map[next_m_config] = "q" + str(cnt)
+                    cnt += 1
+                next_m_config = self.name_map[next_m_config]
+
+            new_table.add_rule(
+                TransitionRule(m_config, symbol, operations, next_m_config)
+            )
 
         return new_table
 
@@ -181,6 +198,43 @@ def test_expand_any_regex_symbol():
     pprint(encoder.symbol_expanded_table)
 
 
+def test_symbol_from_current_head():
+    from pprint import pprint
+
+    pprint("test_symbol_from_current_head")
+
+    SkelotonCompiler.reset()
+    SkelotonCompiler.set_vocab({"0", "1", "a", "b"})
+    e = Compare("success", "fail", "miss", "x", "y")
+
+    table = SkelotonCompiler.compile()
+
+    pprint(table)
+    assert ("q1", "a") in table
+
+    # pprint(encoder.symbol_expanded_table)
+
+
+def test_m_config_name_normalize():
+    from pprint import pprint
+
+    pprint("test_m_config_name_normalize ")
+
+    SkelotonCompiler.reset()
+    e = FindRight("success", "x")
+    table = SkelotonCompiler.compile()
+    table.add_rule(TransitionRule("b", "_", ["$", "R", "$", "R"], "c"))
+    table.add_rule(
+        TransitionRule("c", "_", [], SkelotonCompiler.get_m_config_name(e))
+    )
+
+    encoder = Encoder(table, {"0", "1"}, {"_", "x"})
+    pprint(encoder.m_config_std_table)
+    pprint(encoder.name_map["b"])
+
+
 if __name__ == "__main__":
     test_max_m_config_number()
     test_expand_any_regex_symbol()
+    test_symbol_from_current_head()
+    test_m_config_name_normalize()
