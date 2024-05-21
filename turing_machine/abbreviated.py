@@ -1,8 +1,20 @@
 """
-Manually Implement the abbreviated Tables and a Turing Machine with runtime transition rules
+Implementation of the abbreviated Tables and a compiler to translate the high level abbreviated tables 
+to the low level transition rules
+
+This is almost the reproduction of chapter 4 Abbreviated tables in the Turing's 1936 paper. 
+
+replacing the human brain with python code to interpret the abbreviated tables
+
+Author: Metaesc
+Email: metaescape@foxmail.com
+License: MIT License
 """
 
-from turing_machine.op_extend import Table, TransitionRule, TuringMachine
+try:
+    from turing_machine.op_extend import Table, TransitionRule, TuringMachine
+except:
+    from op_extend import Table, TransitionRule, TuringMachine
 
 
 class SkelotonCompiler(type):

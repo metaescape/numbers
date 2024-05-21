@@ -1,11 +1,15 @@
 """
-Simulate a Turing machine , the length operation in transiction rule is variable
+Simulate a Turing machine , the length of operations in transition rules is variable
 
 support two directions: "L" and "R", Writing symbol support "$"(start), "x", "0", "1", "_"(erase or None)
 
 support match any symbol with "*"
 
-also with pretty print fro complete configuration
+also with pretty print for complete configuration
+
+Author: Metaesc
+Email: metaescape@foxmail.com
+License: MIT License
 """
 
 
