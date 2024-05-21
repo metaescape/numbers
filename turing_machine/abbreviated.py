@@ -355,6 +355,33 @@ class CompareThenErase(abbreviatedTable):
             )
 
 
+class FindRight(abbreviatedTable):
+    def __init__(self, *args):
+        super().__init__()
+        if len(args) == 1:
+            # goto the end of tape (two consecutive empty figures are the end of the tape)
+            success = args[0]
+            self.add_transition("*", ["R"], FindRight(success))
+            self.add_transition("_", ["R"], FindRight1(success))
+        elif len(args) == 2:
+            # goto the end of tape then search back to the first alpha
+            success, alpha = args
+            self.set_alias(FindRight(FindRight1(success, alpha)))
+
+
+class FindRight1(abbreviatedTable):
+    def __init__(self, *args):
+        super().__init__()
+        if len(args) == 1:
+            success = args[0]
+            self.add_transition("_", [], success)
+            self.add_transition("*", ["R"], self)
+        elif len(args) == 2:
+            success, alpha = args
+            self.add_transition("*", ["L"], self)
+            self.add_transition(alpha, [], success)
+
+
 def generate_builtin_library():
     find = Find("a", "b", "x")
     erase = Erase("a", "b", "x")
@@ -590,6 +617,31 @@ def test_compile_compare_then_erase_all():
     print(tm.m_configuration)
 
 
+def test_compile_find_right():
+    from pprint import pprint
+
+    pprint("test find the right most x")
+
+    SkelotonCompiler.reset()
+    e = FindRight("success", "x")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "L", "L", "L"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=9, verbose=True)
+    print(tm.get_tape())
+    assert tm.m_configuration == "success", tm.m_configuration
+    return tm
+
+
 if __name__ == "__main__":
 
     test_compile_erase()
@@ -600,3 +652,4 @@ if __name__ == "__main__":
     test_compile_copy_replace()
     test_compile_compare()
     test_compile_compare_then_erase_all()
+    test_compile_find_right()
