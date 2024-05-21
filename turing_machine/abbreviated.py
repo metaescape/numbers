@@ -133,123 +133,123 @@ class abbreviatedTable(metaclass=SkelotonCompiler):
 
 class Find(abbreviatedTable):
     """
-    find the first occurrence of alpha in the marked Figure square ont the tape
-    transfer to state1 if alpha is found, otherwise transfer to state2
+    find the first occurrence of alpha in the xed Figure square ont the tape
+    transfer to success if alpha is found, otherwise transfer to fail
     """
 
-    def __init__(self, state1, state2, alpha):
+    def __init__(self, success, fail, alpha):
         super().__init__()
-        self.add_transition("$", ["L"], Find1(state1, state2, alpha))
+        self.add_transition("$", ["L"], Find1(success, fail, alpha))
         self.add_transition("*", ["L"], self)
 
 
 class Find1(abbreviatedTable):
-    def __init__(self, state1, state2, alpha):
+    def __init__(self, success, fail, alpha):
         super().__init__()
 
-        self.add_transition(alpha, [], state1)
-        self.add_transition("_", ["R"], Miss1(state1, state2, alpha))
+        self.add_transition(alpha, [], success)
+        self.add_transition("_", ["R"], Miss1(success, fail, alpha))
         self.add_transition("*", ["R"], self)
 
 
 class Miss1(abbreviatedTable):
-    def __init__(self, state1, state2, alpha):
+    def __init__(self, success, fail, alpha):
         super().__init__()
 
-        self.add_transition(alpha, ["R"], state1)
-        self.add_transition("_", ["R"], state2)
-        self.add_transition("*", ["R"], Find1(state1, state2, alpha))
+        self.add_transition(alpha, ["R"], success)
+        self.add_transition("_", ["R"], fail)
+        self.add_transition("*", ["R"], Find1(success, fail, alpha))
 
 
 class Erase(abbreviatedTable):
 
     def __init__(self, *args):
         """
-        if len(args) ==3:  erase the first occurrence of alpha in the tape and transition to state1
-        if alpha is not found, transition to state2
+        if len(args) ==3:  erase the first occurrence of alpha in the tape and transition to success
+        if alpha is not found, transition to fail
 
-        if len(args) ==2:  erase all the occurrence of alpha in the tape and transition to state1
+        if len(args) ==2:  erase all the occurrence of alpha in the tape and transition to success
         """
         super().__init__()
         if len(args) == 3:
-            state1, state2, alpha = args
-            self.set_alias(Find(Erase1(state1, state2, alpha), state2, alpha))
+            success, fail, alpha = args
+            self.set_alias(Find(Erase1(success, fail, alpha), fail, alpha))
         elif len(args) == 2:
-            state1, alpha = args
-            self.set_alias(Erase(Erase(state1, alpha), state1, alpha))
+            success, alpha = args
+            self.set_alias(Erase(Erase(success, alpha), success, alpha))
 
 
 class Erase1(abbreviatedTable):
-    def __init__(self, state1, state2, alpha):
+    def __init__(self, success, fail, alpha):
         super().__init__()
-        self.add_transition(alpha, ["_"], state1)
+        self.add_transition(alpha, ["_"], success)
 
 
 class PrintEnd(abbreviatedTable):
-    def __init__(self, state1, beta):
+    def __init__(self, success, beta):
         super().__init__()
-        self.set_alias(Find(PrintEnd1(state1, beta), state1, "$"))
+        self.set_alias(Find(PrintEnd1(success, beta), success, "$"))
 
 
 class PrintEnd1(abbreviatedTable):
-    def __init__(self, state1, beta):
+    def __init__(self, success, beta):
         super().__init__()
-        self.add_transition("_", [beta], state1)
+        self.add_transition("_", [beta], success)
         self.add_transition("*", ["R", "R"], self)
 
 
 class Left(abbreviatedTable):
-    def __init__(self, state1):
+    def __init__(self, success):
         super().__init__()
-        self.add_transition("*", ["L"], state1)
+        self.add_transition("*", ["L"], success)
 
 
 class Right(abbreviatedTable):
-    def __init__(self, state1):
+    def __init__(self, success):
         super().__init__()
-        self.add_transition("*", ["R"], state1)
+        self.add_transition("*", ["R"], success)
 
 
 class FindThenLeft(abbreviatedTable):
-    def __init__(self, state1, state2, alpha):
+    def __init__(self, success, fail, alpha):
         super().__init__()
-        self.set_alias(Find(Left(state1), state2, alpha))
+        self.set_alias(Find(Left(success), fail, alpha))
 
 
 class FindThenRight(abbreviatedTable):
-    def __init__(self, state1, state2, alpha):
+    def __init__(self, success, fail, alpha):
         super().__init__()
-        self.set_alias(Find(Right(state1), state2, alpha))
+        self.set_alias(Find(Right(success), fail, alpha))
 
 
 class Copy(abbreviatedTable):
-    def __init__(self, state1, state2, mark):
+    def __init__(self, success, fail, x):
         """
-        copy the marked figure to the end empty figure of the tape
+        copy the xed figure to the end empty figure of the tape
         """
         super().__init__()
-        self.set_alias(FindThenLeft(Copy1(state1), state2, mark))
+        self.set_alias(FindThenLeft(Copy1(success), fail, x))
 
 
 class Copy1(abbreviatedTable):
-    def __init__(self, state1):
+    def __init__(self, success):
         super().__init__()
-        self.add_transition("1", [], PrintEnd(state1, "1"))
-        self.add_transition("0", [], PrintEnd(state1, "0"))
+        self.add_transition("1", [], PrintEnd(success, "1"))
+        self.add_transition("0", [], PrintEnd(success, "0"))
 
 
 class CopyThenErase(abbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 3:
-            # copy the marked figure to the end empty figure of the tape and erase the mark
-            state1, state2, alpha = args
-            self.set_alias(Copy(Erase(state1, state2, alpha), state2, alpha))
+            # copy the markeded figure to the end empty figure of the tape and erase the x
+            success, fail, alpha = args
+            self.set_alias(Copy(Erase(success, fail, alpha), fail, alpha))
         elif len(args) == 2:
-            # copy all marked figures to the end empty figures of the tape and erase marks
-            state1, alpha = args
+            # copy all marked figures to the end empty figures of the tape and erase all x
+            success, alpha = args
             self.set_alias(
-                CopyThenErase(CopyThenErase(state1, alpha), state1, alpha)
+                CopyThenErase(CopyThenErase(success, alpha), success, alpha)
             )
 
 
@@ -257,21 +257,21 @@ class Replace(abbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 4:
-            #  replaces the first  alpha by beta and -> state1 or -> state2 if there is no alpha
-            state1, state2, alpha, beta = args
-            self.set_alias(Find(Replace1(state1, beta), state2, alpha))
+            #  replaces the first  alpha by beta and -> success or -> fail if there is no alpha
+            success, fail, alpha, beta = args
+            self.set_alias(Find(Replace1(success, beta), fail, alpha))
         elif len(args) == 3:
-            # replaces all the occurrence of alpha by beta and -> state1
-            state1, alpha, beta = args
+            # replaces all the occurrence of alpha by beta and -> success
+            success, alpha, beta = args
             self.set_alias(
-                Replace(Replace(state1, alpha, beta), state1, alpha, beta)
+                Replace(Replace(success, alpha, beta), success, alpha, beta)
             )
 
 
 class Replace1(abbreviatedTable):
-    def __init__(self, state1, beta):
+    def __init__(self, success, beta):
         super().__init__()
-        self.add_transition("*", ["_", beta], state1)
+        self.add_transition("*", ["_", beta], success)
 
 
 class CopyThenReplace(abbreviatedTable):
@@ -282,57 +282,77 @@ class CopyThenReplace(abbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 3:
-            state1, state2, mark = args
-            self.set_alias(
-                Copy(Replace(state1, state2, mark, mark), state2, mark)
-            )
+            success, fail, x = args
+            self.set_alias(Copy(Replace(success, fail, x, x), fail, x))
         elif len(args) == 2:
-            state1, mark = args
+            success, x = args
             self.set_alias(
                 CopyThenReplace(
-                    CopyThenReplace(state1, mark),
-                    CopyThenReplace(state1, mark, mark),
-                    mark,
+                    CopyThenReplace(success, x),
+                    CopyThenReplace(success, x, x),
+                    x,
                 )
             )
 
 
 class Compare(abbreviatedTable):
-    def __init__(self, state1, state2, mark1, mark2):
+    def __init__(self, success, fail, miss, x, y):
         """
-        compare the marked figures and transfer to state1 if they are equal, otherwise transfer to state2
+        compare the markedd figures and transfer to success if they are equal, otherwise transfer to fail
 
-        if mark1 and mark2 is not found, transfer to state1, if one of them is not found, transfer to state2
+        if x and y is not found, transfer to miss, if one of them is not found, transfer to fail
         """
         super().__init__()
-        self.set_alias(
-            FindThenLeft(Compare1(state1, state2, mark2), state1, mark1)
-        )
+        self.set_alias(FindThenLeft(Compare1(success, fail, y), miss, x))
 
 
 class Compare1(abbreviatedTable):
-    def __init__(self, state1, state2, mark2):
+    def __init__(self, success, fail, y):
         """
-        find mark1
+        find x
         """
         super().__init__()
         self.add_transition(
-            "0", [], FindThenLeft(Compare2(state1, state2, "0"), state2, mark2)
+            "0", [], FindThenLeft(Compare2(success, fail, "0"), fail, y)
         )
         self.add_transition(
-            "1", [], FindThenLeft(Compare2(state1, state2, "1"), state2, mark2)
+            "1", [], FindThenLeft(Compare2(success, fail, "1"), fail, y)
         )
 
 
 class Compare2(abbreviatedTable):
-    def __init__(self, state1, state2, alpha):
+    def __init__(self, success, fail, alpha):
         super().__init__()
         if alpha == "0":
-            self.add_transition("0", [], state1)
-            self.add_transition("*", [], state2)
+            self.add_transition("0", [], success)
+            self.add_transition("*", [], fail)
         elif alpha == "1":
-            self.add_transition("1", [], state1)
-            self.add_transition("*", [], state2)
+            self.add_transition("1", [], success)
+            self.add_transition("*", [], fail)
+
+
+class CompareThenErase(abbreviatedTable):
+    def __init__(self, *args):
+        super().__init__()
+        if len(args) == 5:
+            success, fail, miss, x, y = args
+            self.set_alias(
+                Compare(
+                    Erase(Erase(success, success, x), success, y),
+                    fail,
+                    miss,
+                    x,
+                    y,
+                )
+            )
+        elif len(args) == 4:
+            # compare all and erase all marks, goto  miss after all erase, else goto  fail
+            fail, miss, x, y = args
+            self.set_alias(
+                CompareThenErase(
+                    CompareThenErase(fail, miss, x, y), fail, miss, x, y
+                )
+            )
 
 
 def generate_builtin_library():
@@ -413,7 +433,7 @@ def test_compile_find_and_move():
 def test_compile_copy_erase():
     from pprint import pprint
 
-    pprint("test copy marked and erase mark")
+    pprint("test copy xed and erase x")
 
     SkelotonCompiler.reset()
     e = CopyThenErase("a", "x")
@@ -488,7 +508,7 @@ def test_compile_compare():
     pprint("test compare and success")
 
     SkelotonCompiler.reset()
-    e = Compare("a", "c", "x", "y")
+    e = Compare("success", "fail", "miss", "x", "y")
     table = SkelotonCompiler.compile()
     table.add_rule(
         TransitionRule(
@@ -507,7 +527,7 @@ def test_compile_compare():
 
     pprint("test compare and failed")
     SkelotonCompiler.reset()
-    e = Compare("a", "c", "x", "y")
+    e = Compare("success", "fail", "miss", "x", "y")
     table = SkelotonCompiler.compile()
     table.add_rule(
         TransitionRule(
@@ -526,6 +546,50 @@ def test_compile_compare():
     return tm
 
 
+def test_compile_compare_then_erase_all():
+    from pprint import pprint
+
+    pprint("test compare and success erase all x and y")
+
+    SkelotonCompiler.reset()
+    e = CompareThenErase("fail", "miss", "x", "y")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            [
+                "$",
+                "R",
+                "$",
+                "R",
+                "0",
+                "R",
+                "x",
+                "R",
+                "0",
+                "R",
+                "x",
+                "R",
+                "0",
+                "R",
+                "y",
+                "R",
+                "0",
+                "R",
+                "y",
+            ],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=133, verbose=False)
+    print(tm.get_tape())
+    print(tm.m_configuration)
+
+
 if __name__ == "__main__":
 
     test_compile_erase()
@@ -535,3 +599,4 @@ if __name__ == "__main__":
     test_compile_replace()
     test_compile_copy_replace()
     test_compile_compare()
+    test_compile_compare_then_erase_all()
