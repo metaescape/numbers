@@ -26,7 +26,7 @@ class SkelotonCompiler(type):
 
     _instances: dict = {}
     _instances2name: dict = {}
-    cnt = 0
+    cnt = 1
     obj2name = {}
 
     def __call__(cls, *args, **kwargs):
@@ -48,7 +48,7 @@ class SkelotonCompiler(type):
     def reset(cls):
         cls._instances = {}
         cls._instances2name = {}
-        cls.cnt = 0
+        cls.cnt = 1
         cls.obj2name = {}
 
     @classmethod
