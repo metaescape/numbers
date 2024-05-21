@@ -425,11 +425,23 @@ class CopyThenEraseThree(abbreviatedTable):
 class EraseAllMark(abbreviatedTable):
     def __init__(self, success):
         super().__init__()
+        self.add_transition("*", ["L"], self)
+        self.add_transition("$", ["R"], EraseAllMark1(success))
+
+
+class EraseAllMark1(abbreviatedTable):
+    def __init__(self, success):
+        super().__init__()
+        self.add_transition("*", ["R", "_", "R"], self)
+        self.add_transition("_", [], success)
 
 
 def generate_builtin_library():
     find = Find("a", "b", "x")
     erase = Erase("a", "b", "x")
+
+
+#  Test Cases
 
 
 def test_compile_erase():
@@ -723,6 +735,31 @@ def test_compile_copy_then_erase_three():
     return tm
 
 
+def test_compile_erase_all_marks():
+    from pprint import pprint
+
+    pprint("test erase all marks ")
+
+    SkelotonCompiler.reset()
+    e = EraseAllMark("success")
+    table = SkelotonCompiler.compile()
+    table.add_rule(
+        TransitionRule(
+            "b",
+            "_",
+            ["$", "R", "$", "R", "0", "R", "x", "R", "0", "R", "x"],
+            SkelotonCompiler.get_m_config_name(e),
+        )
+    )
+
+    pprint(table.table)
+    tm = TuringMachine(table, "b")
+    tm.run(steps=9, verbose=True)
+    print(tm.get_sequence())
+    assert tm.m_configuration == "success", tm.m_configuration
+    return tm
+
+
 if __name__ == "__main__":
 
     test_compile_erase()
@@ -735,3 +772,4 @@ if __name__ == "__main__":
     test_compile_compare_then_erase_all()
     test_compile_find_right()
     test_compile_copy_then_erase_three()
+    test_compile_erase_all_marks()
