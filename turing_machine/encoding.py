@@ -46,11 +46,13 @@ class Encoder:
         self.origin_table = table
         self.figure_vocab = figure_vocab
         self.erase_vocab = erase_vocab
-        self.build_symbol_map()
+        self.vocab = figure_vocab | erase_vocab
+        self.std_map = self.build_symbol_map()
         self.max_m_config_number = self.get_max_m_config_number()
+        self.symbol_expanded_table = self.expand_regex_in_table()
 
     def build_symbol_map(self):
-        self.std_map = {
+        std_code_map = {
             "_": "D",
             "0": "DC",
             "1": "DCC",
@@ -58,10 +60,11 @@ class Encoder:
             "x": "DCCCC",
         }
         cnt = 5
-        for symbol in self.figure_vocab | self.erase_vocab:
-            if symbol not in self.std_map:
-                self.std_map[symbol] = "D" + cnt * "C"
+        for symbol in self.vocab:
+            if symbol not in std_code_map:
+                std_code_map[symbol] = "D" + cnt * "C"
                 cnt += 1
+        return std_code_map
 
     def get_max_m_config_number(self):
         max_number = 0
@@ -71,6 +74,37 @@ class Encoder:
                 number = int(m_config[1:])
                 max_number = max(max_number, number)
         return max_number
+
+    def expand_any_regex_symbol(self, rule: TransitionRule):
+        """
+        Expand the * symbol to all possible symbols
+        """
+        rules = []
+        assert "*" in rule.symbols
+        for symbol in self.vocab:
+            if (rule.m_config, symbol) not in self.origin_table.table:
+                new_rule = TransitionRule(
+                    rule.m_config, symbol, rule.operations, rule.next_m_config
+                )
+                rules.append(new_rule)
+
+        return rules
+
+    def expand_regex_in_table(self):
+        """
+        Expand the * symbol in the table
+        """
+        new_table = Table()
+        for key, value in self.origin_table.table.items():
+            rule = TransitionRule(key[0], key[1], value[0], value[1])
+            if "*" in rule.symbols:
+                rules = self.expand_any_regex_symbol(rule)
+                for new_rule in rules:
+                    new_table.add_rule(new_rule)
+            else:
+                new_table.add_rule(rule)
+
+        return new_table
 
     def standardize_m_configuration(self):
         """
@@ -131,5 +165,22 @@ def test_max_m_config_number():
     assert encoder.max_m_config_number == 2
 
 
+def test_expand_any_regex_symbol():
+    from pprint import pprint
+
+    pprint("test expand any regex symbol")
+
+    rule = TransitionRule("q2", "*", ["R", "_", "R"], "q2")
+    e = EraseAllMark("success")
+    table = SkelotonCompiler.compile()
+    encoder = Encoder(table, {"0", "1"}, {"_", "x"})
+
+    rules = encoder.expand_any_regex_symbol(rule)
+    pprint(rules)
+
+    pprint(encoder.symbol_expanded_table)
+
+
 if __name__ == "__main__":
     test_max_m_config_number()
+    test_expand_any_regex_symbol()

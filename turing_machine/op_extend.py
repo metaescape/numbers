@@ -159,6 +159,9 @@ class TransitionRule:
     def behavior(self):
         return self.operations, self.next_m_config
 
+    def __repr__(self):
+        return f"{self.m_config} {self.symbols} -> {self.operations} {self.next_m_config}"
+
 
 class Table:
     """
@@ -167,6 +170,7 @@ class Table:
 
     def __init__(self):
         self.table = {}
+        self.rules = []
 
     def __contains__(self, key):
         m_config, _ = key
@@ -181,6 +185,7 @@ class Table:
         return self.table[(m_config, "*")]
 
     def add_rule(self, rule: TransitionRule):
+        self.rules.append(rule)
         m_config, symbols = rule.configuration()
         value = rule.behavior()
         symbols = [symbols] if not symbols else symbols
@@ -188,6 +193,9 @@ class Table:
             assert symbols[-1] == "*", "* shold not be in last position"
         for symbol in symbols:
             self.table[(m_config, symbol)] = value
+
+    def __repr__(self):
+        return "\n".join([str(rule) for rule in self.rules])
 
 
 def test_1_3_machine():
