@@ -64,9 +64,9 @@ class TuringMachine:
         tape = self.get_tape()
         m_config = self.m_configuration
         if turing:
-            left = "".join(tape[: self.head_position])
-            right = "".join(tape[self.head_position :])
-            return f":{left}{self.m_configuration}{right}"
+            left = tape[: self.head_position]
+            right = tape[self.head_position :]
+            return left + [self.m_configuration] + right
         else:
             tape[self.head_position] = f"[{tape[self.head_position]}]"
             s = "".join(tape)
@@ -83,7 +83,15 @@ class TuringMachine:
         return "0." + self.get_sequence()
 
     def get_history(self):
-        return "".join(self.history) + ":"
+        return (
+            "".join(
+                [
+                    ":" + "".join(complete_config)
+                    for complete_config in self.history
+                ]
+            )
+            + ":"
+        )
 
     def get_decimal(self):
         """

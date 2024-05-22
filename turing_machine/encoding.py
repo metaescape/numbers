@@ -12,10 +12,11 @@ we can compile abbreviated transition tables with different encoding levels, suc
   This means the state q0 reads the symbol S1, writes the symbol PS1, moves the tape to the right, and transitions to the state q1.
 - Standard description level (using D, A, C to represent all symbols and state names)
 
-The encoding level affects the simplicity and conciseness of the logical description, not the computational efficiency.
+The encoding level affects the simplicity and conciseness of the implementation of universal machines, but
+ not the computational efficiency.
 
 no need to modify the implementation of the Turing machine,
-only add additional functions to compile the transition table secondarily.
+only add additional functions to compile the transition table to different encoding levels.
 
 
 Author: Metaesc
@@ -318,6 +319,23 @@ class Encoder:
             print in self.vocab
         ), "The print operation should be in the vocabulary"
         return self.std_map[print] + move
+
+    def get_inner_m_config(self, m_config: str):
+        return self.name_map[m_config]
+
+    def encode_history(self, history: list[list]):
+        """
+        Encode the history of the Turing machine
+        """
+        result = [":"]
+        for complete_config in history:
+            for ele in complete_config:
+                if ele in self.vocab:
+                    result.append(self.encode_symbol(ele))
+                else:
+                    result.append(self.encode_m_config(ele))
+            result.append(":")
+        return "".join(result)
 
 
 # Test Cases
