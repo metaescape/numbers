@@ -118,7 +118,7 @@ class TuringMachine:
                         print("Warning: head position is negative, reset to 0")
                         self.head_position = 0
 
-                else:
+                elif operation != "N":
                     write_symbol = operation
                     self.tape[self.head_position] = write_symbol
 

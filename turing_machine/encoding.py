@@ -2,7 +2,7 @@
 This script almost reproduces Chapter 6, "Enumeration of Computable Sequences," from Turing's 1936 paper.
 
 It implements the following utilities:
-- Standard description of a Turing machine(aka table with 5-tuple descriptions)
+- Standard form of a Turing machine(aka table with rules in 5-tuple format)
 - Description number of a Turing machine
 - Standard rules (N1, N2, N3) of the transition table
 
@@ -49,10 +49,13 @@ class Encoder:
         self.erase_vocab = erase_vocab
         self.vocab = figure_vocab | erase_vocab
         self.std_map = self.build_symbol_map()
-        self.max_m_config_number = self.get_max_m_config_number()
+        self.q_cnt = self.get_max_m_config_number()
         self.symbol_expanded_table = self.expand_regex_in_table(table.table)
         self.m_config_std_table = self.standardize_m_configuration(
-            self.symbol_expanded_table.table, self.max_m_config_number + 1
+            self.symbol_expanded_table.table
+        )
+        self.std_form_table = self.encode_rule_to_5_tuple(
+            self.m_config_std_table
         )
 
     def build_symbol_map(self):
@@ -110,7 +113,7 @@ class Encoder:
 
         return new_table
 
-    def standardize_m_configuration(self, table: dict, cnt: int):
+    def standardize_m_configuration(self, table: dict):
         """
         make sure the m_configuration is in the form of q1, q2, q3, ...
         """
@@ -121,13 +124,13 @@ class Encoder:
             operations, next_m_config = value
             if not m_config.startswith("q"):
                 if m_config not in self.name_map:
-                    self.name_map[m_config] = "q" + str(cnt)
-                    cnt += 1
+                    self.q_cnt += 1
+                    self.name_map[m_config] = "q" + str(self.q_cnt)
                 m_config = self.name_map[m_config]
             if not next_m_config.startswith("q"):
                 if next_m_config not in self.name_map:
-                    self.name_map[next_m_config] = "q" + str(cnt)
-                    cnt += 1
+                    self.q_cnt += 1
+                    self.name_map[next_m_config] = "q" + str(self.q_cnt)
                 next_m_config = self.name_map[next_m_config]
 
             new_table.add_rule(
@@ -136,12 +139,127 @@ class Encoder:
 
         return new_table
 
-    def encode_rule_to_5_tuple(self, rule: TransitionRule):
+    def expand_operations(self, rule: TransitionRule) -> list:
+        """
+        Encode the transition rule into multiple 5-tuple form
+        """
+        operations = rule.operations
+        if len(operations) == 0:
+            return [
+                TransitionRule(
+                    rule.m_config,
+                    rule.symbols,
+                    [rule.symbols, "N"],
+                    rule.next_m_config,
+                )
+            ]
+        elif len(operations) == 1:
+            if operations[0] in ["L", "R", "N"]:
+                return [
+                    TransitionRule(
+                        rule.m_config,
+                        rule.symbols,
+                        [rule.symbols, operations[0]],
+                        rule.next_m_config,
+                    )
+                ]
+            else:
+                return [
+                    TransitionRule(
+                        rule.m_config,
+                        rule.symbols,
+                        [operations[0], "N"],
+                        rule.next_m_config,
+                    )
+                ]
+        elif operations[0] not in ["L", "R", "N"] and operations[1] in [
+            "L",
+            "R",
+            "N",
+        ]:
+            if len(operations) == 2:
+                return [
+                    TransitionRule(
+                        rule.m_config,
+                        rule.symbols,
+                        operations[:2],
+                        rule.next_m_config,
+                    )
+                ]
+
+            self.q_cnt += 1
+            new_m_config = f"q{self.q_cnt + 1}"
+            first_rule = TransitionRule(
+                rule.m_config, rule.symbols, operations[:2], new_m_config
+            )
+            seconds = []
+            for symbol in self.vocab:
+                seconds.append(
+                    TransitionRule(
+                        new_m_config,
+                        symbol,
+                        operations[2:],
+                        rule.next_m_config,
+                    )
+                )
+            return [first_rule] + sum(
+                [self.expand_operations(r) for r in seconds], []
+            )
+        elif operations[0] not in ["L", "R", "N"]:
+            self.q_cnt += 1
+            new_m_config = f"q{self.q_cnt + 1}"
+            first_rule = TransitionRule(
+                rule.m_config, rule.symbols, [operations[0], "N"], new_m_config
+            )
+            seconds = []
+            for symbol in self.vocab:
+                seconds.append(
+                    TransitionRule(
+                        new_m_config,
+                        symbol,
+                        operations[1:],
+                        rule.next_m_config,
+                    )
+                )
+            return [first_rule] + sum(
+                [self.expand_operations(r) for r in seconds], []
+            )
+
+        else:  # operations[0] in ["L", "R", "N"]:
+            self.q_cnt += 1
+            new_m_config = f"q{self.q_cnt + 1}"
+            first_rule = TransitionRule(
+                rule.m_config,
+                rule.symbols,
+                [operations[0]],
+                new_m_config,
+            )
+            seconds = []
+            for symbol in self.vocab:
+                seconds.append(
+                    TransitionRule(
+                        new_m_config,
+                        symbol,
+                        operations[1:],
+                        rule.next_m_config,
+                    )
+                )
+            return self.expand_operations(first_rule) + sum(
+                [self.expand_operations(r) for r in seconds], []
+            )
+
+    def encode_rule_to_5_tuple(self, table: Table):
         """
         Encode the transition rule into 5-tuple description
         e.g. (b, "_", ["$", "R", "$", "R", ], "c") -> (b, None, 0, R, c)
         """
-        pass
+        new_table = Table()
+        for rule in table.rules:
+            rules = self.expand_operations(rule)
+            for r in rules:
+                new_table.add_rule(r)
+
+        return new_table
 
     def standard_encoding(self):
         """
@@ -179,7 +297,7 @@ def test_max_m_config_number():
 
     encoder = Encoder(table, {"0", "1"}, {"_", "x"})
     pprint(table.table)
-    assert encoder.max_m_config_number == 2
+    pprint(encoder.q_cnt)
 
 
 def test_expand_any_regex_symbol():
@@ -233,8 +351,55 @@ def test_m_config_name_normalize():
     pprint(encoder.name_map["b"])
 
 
+def test_expand_operations():
+    from pprint import pprint
+
+    pprint("test_expand_operations ")
+
+    SkelotonCompiler.reset()
+    table = SkelotonCompiler.compile()
+    rule = TransitionRule("b", "_", ["$", "R", "$", "R"], "c")
+
+    encoder = Encoder(table, {"0", "1", "$"}, {"_", "x"})
+    pprint(encoder.expand_operations(rule))
+    rule = TransitionRule("b", "_", ["$", "R", "$"], "c")
+    pprint(encoder.expand_operations(rule))
+    rule = TransitionRule("b", "_", ["$"], "c")
+    pprint(encoder.expand_operations(rule))
+    rule = TransitionRule(
+        "b", "_", ["$", "R", "$", "R", "0", "R", "R", "0", "L", "L"], "o"
+    )  # exponential expansion, so it's not recommended to write a rule with too many operations
+    pprint(len(encoder.expand_operations(rule)))
+
+
+def test_std_form_table():
+    from pprint import pprint
+
+    pprint("test_std_form_table ")
+
+    SkelotonCompiler.reset()
+    e = FindRight("success", "x")
+    table = SkelotonCompiler.compile()
+    table.add_rule(TransitionRule("b", "_", ["$", "R", "$", "R"], "c"))
+    table.add_rule(
+        TransitionRule("c", "_", [], SkelotonCompiler.get_m_config_name(e))
+    )
+
+    encoder = Encoder(table, {"0", "1", "$"}, {"_", "x"})
+    pprint("origin table:")
+    pprint(encoder.origin_table)
+    pprint("symbol expanded table:")
+    pprint(encoder.symbol_expanded_table)
+    pprint("m_config std table:")
+    pprint(encoder.m_config_std_table)
+    pprint("std form table:")
+    pprint(encoder.std_form_table)
+
+
 if __name__ == "__main__":
     test_max_m_config_number()
     test_expand_any_regex_symbol()
     test_symbol_from_current_head()
     test_m_config_name_normalize()
+    test_expand_operations()
+    test_std_form_table()
