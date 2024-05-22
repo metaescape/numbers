@@ -261,19 +261,41 @@ class Encoder:
 
         return new_table
 
-    def standard_encoding(self):
+    @property
+    def standard_form(self):
+        codes = []
+        for rule in self.std_form_table.rules:
+            m_config, symbol, operations, next_m_config = rule
+            print, move = operations
+            codes.append(f"{m_config}{symbol}{print}{move}{next_m_config};")
+        return "".join(codes)
+
+    @property
+    def standard_description(self):
         """
         Encode the transition table into standard description
         """
-        new_table = Table()
-        pass
-        return new_table
+        codes = []
+        for rule in self.std_form_table.rules:
+            m_config, symbol, operations, next_m_config = rule
+            codes.append(self.encode_m_config(m_config))
+            codes.append(self.encode_symbol(symbol))
+            codes.append(self.encode_operations(operations))
+            codes.append(self.encode_m_config(next_m_config))
+            codes.append(";")
+        return "".join(codes)
 
-    def encode_description_number(self):
+    @property
+    def description_number(self):
         """
         Encode the transition table into the description number
         """
-        pass
+        code_map = {"A": 1, "C": 2, "D": 3, "L": 4, "R": 5, "N": 6, ";": 7}
+        code = []
+        std_desc = self.standard_description
+        for c in std_desc:
+            code.append(str(code_map[c]))
+        return "".join(code)
 
     def encode_m_config(self, m_config: str):
         number = int(m_config[1:])
@@ -281,6 +303,21 @@ class Encoder:
 
     def encode_symbol(self, symbol: str):
         return self.std_map[symbol]
+
+    def encode_operations(self, operations: list):
+        assert (
+            len(operations) == 2
+        ), "The operations should be a pair of operations"
+        print, move = operations
+        assert move in [
+            "L",
+            "R",
+            "N",
+        ], "The move operation should be L, R, or N"
+        assert (
+            print in self.vocab
+        ), "The print operation should be in the vocabulary"
+        return self.std_map[print] + move
 
 
 # Test Cases
@@ -372,7 +409,7 @@ def test_expand_operations():
     pprint(len(encoder.expand_operations(rule)))
 
 
-def test_std_form_table():
+def test_std_form_table_standard_encoding():
     from pprint import pprint
 
     pprint("test_std_form_table ")
@@ -394,6 +431,9 @@ def test_std_form_table():
     pprint(encoder.m_config_std_table)
     pprint("std form table:")
     pprint(encoder.std_form_table)
+    pprint(encoder.standard_form)
+    pprint(encoder.standard_description)
+    pprint(encoder.description_number)
 
 
 if __name__ == "__main__":
@@ -402,4 +442,4 @@ if __name__ == "__main__":
     test_symbol_from_current_head()
     test_m_config_name_normalize()
     test_expand_operations()
-    test_std_form_table()
+    test_std_form_table_standard_encoding()

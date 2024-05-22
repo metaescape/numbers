@@ -162,6 +162,12 @@ class TransitionRule:
     def __repr__(self):
         return f"{self.m_config} {self.symbols} -> {self.operations} {self.next_m_config}"
 
+    def __iter__(self):
+        yield self.m_config
+        yield self.symbols
+        yield self.operations
+        yield self.next_m_config
+
 
 class Table:
     """
