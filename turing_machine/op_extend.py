@@ -27,9 +27,6 @@ class TuringMachine:
         self.history = []
         self.fill_len = 3
 
-    def set_fill_len(self, fill_len):
-        self.fill_len = fill_len
-
     @property
     def m_configuration(self):
         return self.current_state
@@ -59,6 +56,10 @@ class TuringMachine:
         """
         tape = self.tape[: self.max_right + 1]
         return tape
+
+    def set_fill_len(self, fill_len):
+        """length for aligning m_configuration when print"""
+        self.fill_len = fill_len
 
     def str(self, turing=False):
         tape = self.get_tape()
@@ -144,6 +145,21 @@ class TuringMachine:
         """运行图灵机直到达到终止状态"""
         for i in range(steps):
             self.step(i, verbose=verbose)
+
+    def load_instruction(self, code):
+        """
+        for universal turing machine
+        """
+        vocab = set(code)
+        assert vocab.issubset({"R", "L", "N", ";", "D", "A", "C"})
+        length = len(code) * 2 * 2
+        if length > len(self.tape):
+            self.tape = ["_"] * length
+        self.tape[:2] = ["$", "$"]
+        for i in range(len(code)):
+            self.tape[2 + i * 2] = code[i]
+        self.tape[2 + len(code) * 2] = "::"
+        self.max_right = 2 + len(code) * 2
 
 
 class TransitionRule:

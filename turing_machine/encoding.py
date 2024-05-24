@@ -278,13 +278,26 @@ class Encoder:
         """
         codes = []
         for rule in self.std_form_table.rules:
+            codes.append(";")
             m_config, symbol, operations, next_m_config = rule
             codes.append(self.encode_m_config(m_config))
             codes.append(self.encode_symbol(symbol))
             codes.append(self.encode_operations(operations))
             codes.append(self.encode_m_config(next_m_config))
-            codes.append(";")
+
         return "".join(codes)
+
+    @property
+    def standard_form(self):
+        """
+        Encode the transition table into 5-tuple standard form
+        """
+        codes = []
+        for rule in self.std_form_table.rules:
+            m_config, symbol, operations, next_m_config = rule
+            print, move = operations
+            codes.append((m_config, symbol, print, move, next_m_config))
+        return codes
 
     @property
     def description_number(self):
