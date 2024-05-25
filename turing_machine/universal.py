@@ -142,7 +142,9 @@ class CompareXYSequence(abbreviatedTable):
 
 
 class SAME(abbreviatedTable):
-    """sim state in the paper"""
+    """sim state in the paper
+    mark next-m-configuration in the instruction with y
+    """
 
     def __init__(self):
         super().__init__()
@@ -215,7 +217,7 @@ class MarkLastFullConfig2(abbreviatedTable):
 
 class MarkLastFullConfig3(abbreviatedTable):
     """
-    Mark the remain DCC.. to the left m-configuation and current symbol in the last complete configuration with v
+    Mark the remain DCC.. to the left o m-configuation in the last complete configuration with v
     """
 
     def __init__(self):
@@ -305,15 +307,30 @@ class Inst(abbreviatedTable):
 class Inst1(abbreviatedTable):
     def __init__(self):
         super().__init__()
-        clean_and_restart = CopyThenEraseThree(
-            CopyThenEraseTwo(EraseAllMark(MarkLastConfig()), "x", "y"),
-            "u",
-            "v",
-            "w",
+        clean_and_restart = EraseAllMark(MarkLastConfig())
+        self.add_transition(
+            "L",
+            ["R", "_"],
+            CopyThenEraseFive(clean_and_restart, "v", "y", "x", "u", "w"),
         )
-        self.add_transition("L", ["R", "_"], clean_and_restart)
-        self.add_transition("R", ["R", "_"], clean_and_restart)
-        self.add_transition("N", ["R", "_"], clean_and_restart)
+        self.add_transition(
+            "R",
+            ["R", "_"],
+            CopyThenEraseFive(clean_and_restart, "v", "x", "u", "y", "w"),
+        )
+        self.add_transition(
+            "N",
+            ["R", "_"],
+            CopyThenEraseFive(clean_and_restart, "v", "x", "y", "u", "w"),
+        )
+
+
+class CopyThenEraseFive(abbreviatedTable):
+    def __init__(self, success, x, y, z, u, v):
+        super().__init__()
+        self.set_alias(
+            CopyThenEraseThree(CopyThenEraseTwo(success, u, v), x, y, z)
+        )
 
 
 def create_universal_machine(instruction):
@@ -440,7 +457,7 @@ def test_universal_machine():
     bcek_table.add_rule(TransitionRule("c", "_", ["1", "R"], "b"))
     encoder = Encoder(bcek_table, {"0", "1", "$"}, {"_", "x"})
     tm = create_universal_machine(encoder.standard_description)
-    total = 100699
+    total = 50699
     tm.run(steps=total, verbose=range(total - 100, total))
     print(tm.get_decimal())
     return tm
