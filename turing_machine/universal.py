@@ -16,27 +16,46 @@ try:
     from turing_machine.op_extend import Table, TransitionRule, TuringMachine
     from turing_machine.abbreviated import (
         SkelotonCompiler,
+        Find,
         FindRight,
         EraseAllMark,
         Compare,
         abbreviatedTable,
+        CompareThenErase,
+        Erase,
+        FindThenLeft,
+        FindThenRight,
+        Left,
+        PrintEndTwo,
+        CopyThenEraseThree,
+        CopyThenEraseTwo,
     )
     from turing_machine.encoding import Encoder
 except:
     from op_extend import Table, TransitionRule, TuringMachine
     from abbreviated import (
         SkelotonCompiler,
+        Find,
         FindRight,
         EraseAllMark,
         Compare,
         abbreviatedTable,
+        CompareThenErase,
+        Erase,
+        FindThenLeft,
+        FindThenRight,
+        Left,
+        PrintEndTwo,
+        CopyThenEraseThree,
+        CopyThenEraseTwo,
     )
     from encoding import Encoder
 
 
 class MarkRightConfig(abbreviatedTable):
     """
-    start from a Figure square, mark all the symbol in the first m-configuration( e.g DAAAA) to the right using x
+    con stat in the paper
+    start from a Figure square, mark the first m-configuration and symbol sequence( e.g DAAAADCC) to the right using x
     """
 
     def __init__(self, success, x):
@@ -60,8 +79,275 @@ class MarkRightConfig2(abbreviatedTable):
         self.add_transition("*", ["R", "R"], success)
 
 
-def begin_of_universal():
-    return
+class EntryUTM(abbreviatedTable):
+    """
+    the fisrt state of the universal machine
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.add_transition("*", "R", Find(EntryUTM1(), EntryUTM1(), "::"))
+
+
+class EntryUTM1(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        self.add_transition(
+            "*",
+            ["R", "R", ":", "R", "R", "D", "R", "R", "A"],
+            MarkLastConfig(),
+        )  # print q1 state to tape,so this should be the first state of any machine
+
+
+class MarkLastConfig(abbreviatedTable):
+    """
+    anf state in the paper
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.set_alias(FindRight(MarkLastConfig1(), ":"))
+
+
+class MarkLastConfig1(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        self.set_alias(MarkRightConfig(MarkNextConfig(), "y"))
+
+
+class MarkNextConfig(abbreviatedTable):
+    """
+    kom state in the paper
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.add_transition(
+            ";", ["R", "z", "L"], MarkRightConfig(CompareXYSequence(), "x")
+        )
+        self.add_transition("z", ["L", "L"], self)
+        self.add_transition("*", ["L"], self)
+
+
+class CompareXYSequence(abbreviatedTable):
+    """kmp state in the paper"""
+
+    def __init__(self):
+        super().__init__()
+        self.set_alias(
+            CompareThenErase(
+                Erase(Erase(MarkLastConfig(), "x"), "y"), SAME(), "x", "y"
+            )
+        )
+
+
+class SAME(abbreviatedTable):
+    """sim state in the paper"""
+
+    def __init__(self):
+        super().__init__()
+        self.set_alias(FindThenLeft(SAME1(), SAME2(), "z"))
+
+
+class SAME1(abbreviatedTable):
+    """sim1 state in the paper"""
+
+    def __init__(self):
+        super().__init__()
+        self.set_alias(MarkRightConfig(SAME2(), ""))
+
+
+class SAME2(abbreviatedTable):
+    """sim2 state in the paper"""
+
+    def __init__(self):
+        super().__init__()
+        self.add_transition("A", [], SAME3())
+        self.add_transition("*", ["L", "u", "R", "R", "R"], self)
+
+
+class SAME3(abbreviatedTable):
+    """sim3 state in the paper"""
+
+    def __init__(self):
+        super().__init__()
+
+        self.add_transition("A", ["L", "y", "R", "R", "R"], self)
+        self.add_transition("*", ["L", "y"], Erase(MarkLastFullConfig(), "z"))
+
+
+class MarkLastFullConfig(abbreviatedTable):
+    """
+    mk/mf state in the paper, FullConfig is the same as Complete configuration
+    this state will mark the sequence left to the m-configuation and current symbol in the last complete configuration with x
+    also mark the sequence right to the m-configuation and current symbol in the last complete configuration with v
+
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.set_alias(FindRight(MarkLastFullConfig1(), ":"))
+
+
+class MarkLastFullConfig1(abbreviatedTable):
+
+    def __init__(self):
+        super().__init__()
+        self.add_transition(
+            "A", ["L"] * 4, MarkLastFullConfig2()
+        )  # find c-config
+        self.add_transition("*", ["R"] * 2, self)
+
+
+class MarkLastFullConfig2(abbreviatedTable):
+    """
+    mark the first DCCC.. to the left of m-configuation and current symbol in the last complete configuration with x
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.add_transition("C", ["R", "x", "L", "L", "L"], self)
+        self.add_transition(":", [], MarkLastFullConfig4())
+        self.add_transition(
+            "D", ["R", "x", "L", "L", "L"], MarkLastFullConfig3()
+        )
+
+
+class MarkLastFullConfig3(abbreviatedTable):
+    """
+    Mark the remain DCC.. to the left m-configuation and current symbol in the last complete configuration with v
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.add_transition(":", [], MarkLastFullConfig4())
+        self.add_transition("*", ["R", "v", "L", "L", "L"], self)
+
+
+class MarkLastFullConfig4(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        self.set_alias(
+            MarkRightConfig(Left(Left(MarkLastFullConfig5())), "")
+        )  # skip the m-config and current symbol
+
+
+class MarkLastFullConfig5(abbreviatedTable):
+    """
+    Mark all the DCC.. sybmol to the right of m-configuration and current symbol in last complete configuration with w
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.add_transition("_", [":"], Print0or1())
+        self.add_transition("*", ["R", "w", "R"], self)
+
+
+class Print0or1(abbreviatedTable):
+    """
+    eb state in the paper
+    go back to instruction section, if 1 or 0 is Printed in the  instruction, print it to the end of complete configuration
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.set_alias(Find(Print0or1_1(), Inst(), "u"))
+
+
+class Print0or1_1(abbreviatedTable):
+    """ """
+
+    def __init__(self):
+        super().__init__()
+        # goto the last square of scanned symbol in  the instruction
+        self.add_transition("*", ["L"] * 3, Print0or1_2())
+
+
+class Print0or1_2(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        self.add_transition("D", ["R"] * 4, Print0or1_3())
+        self.add_transition("*", [], Inst())
+
+
+class Print0or1_3(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        self.add_transition("C", ["R"] * 2, Print0or1_4())
+        self.add_transition("*", [], Inst())
+
+
+class Print0or1_4(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        self.add_transition("C", ["R"] * 2, Print0or1_5())
+        self.add_transition("*", [], PrintEndTwo(Inst(), "0", ":"))
+
+
+class Print0or1_5(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        self.add_transition("C", ["R"] * 2, Print0or1_5())
+        self.add_transition("*", [], PrintEndTwo(Inst(), "1", ":"))
+
+
+class Inst(abbreviatedTable):
+    """
+    inst state in the paper, create a new complete configuration base on the instruction and last complete configuration
+    """
+
+    def __init__(self):
+        super().__init__()
+        # find the action in the instruction
+        self.set_alias(FindRight(Left(Inst1()), "u"))
+
+
+class Inst1(abbreviatedTable):
+    def __init__(self):
+        super().__init__()
+        clean_and_restart = CopyThenEraseThree(
+            CopyThenEraseTwo(EraseAllMark(MarkLastConfig()), "x", "y"),
+            "u",
+            "v",
+            "w",
+        )
+        self.add_transition("L", ["R", "_"], clean_and_restart)
+        self.add_transition("R", ["R", "_"], clean_and_restart)
+        self.add_transition("N", ["R", "_"], clean_and_restart)
+
+
+def create_universal_machine(instruction):
+    from pprint import pprint
+
+    SkelotonCompiler.reset()
+    SkelotonCompiler.set_vocab(
+        {
+            "0",
+            "1",
+            "R",
+            "L",
+            "N",
+            "_",
+            "x",
+            "y",
+            "z",
+            "u",
+            "v",
+            "w",
+            ":",
+            ";",
+            "D",
+            "A",
+            "C",
+            "::",
+        }
+    )
+    b = EntryUTM()
+    table = SkelotonCompiler.compile()
+    print(f"there are {SkelotonCompiler.cnt} states in the universal machine")
+    tm = TuringMachine(table, SkelotonCompiler.get_m_config_name(b))
+    tm.load_instruction(instruction)
+    return tm
 
 
 def show_1_3_table_description():
@@ -119,7 +405,7 @@ def add_1_3_code_to_machine():
 def test_mark_right():
     from pprint import pprint
 
-    pprint("test MarkRightConfig function")
+    pprint("---------test MarkRightConfig function----------")
     bcek_table = Table()
 
     bcek_table.add_rule(TransitionRule("b", "_", ["0", "R"], "c"))
@@ -145,7 +431,23 @@ def test_mark_right():
     return tm
 
 
+def test_universal_machine():
+    from pprint import pprint
+
+    pprint("----------test universal machine----------")
+    bcek_table = Table()
+    bcek_table.add_rule(TransitionRule("b", "_", ["0", "R"], "c"))
+    bcek_table.add_rule(TransitionRule("c", "_", ["1", "R"], "b"))
+    encoder = Encoder(bcek_table, {"0", "1", "$"}, {"_", "x"})
+    tm = create_universal_machine(encoder.standard_description)
+    total = 100699
+    tm.run(steps=total, verbose=range(total - 100, total))
+    print(tm.get_decimal())
+    return tm
+
+
 if __name__ == "__main__":
     show_1_3_table_description()
     add_1_3_code_to_machine()
     test_mark_right()
+    test_universal_machine()

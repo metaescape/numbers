@@ -116,7 +116,7 @@ class TuringMachine:
                     self.max_right = max(self.head_position, self.max_right)
                     if self.head_position >= len(self.tape):
                         length_before = len(self.tape)
-                        self.tape.extend(["_"] * 2000)
+                        self.tape.extend(["_"] * len(self.tape))
                         print(
                             f"Warning: head position is out of tape,"
                             f"extend tape from length {length_before} to {len(self.tape)}"
@@ -133,7 +133,7 @@ class TuringMachine:
 
             self.current_state = next_m_config
             self.history.append(self.str(turing=True))
-            if verbose:
+            if verbose == True or (verbose and idx in verbose):
                 print(f"{idx + 1}: {self.str(turing=False)}")
 
         else:
@@ -221,8 +221,14 @@ class Table:
         symbols = [symbols] if not symbols else symbols
         if "*" in symbols:
             assert symbols[-1] == "*", "* shold not be in last position"
-        for symbol in symbols:
-            self.table[(m_config, symbol)] = value
+        if "::" in symbols:
+            assert (
+                len(symbols) == 2
+            ), " :: is a specical length two symbol,make sure only :: in it"
+            self.table[(m_config, "::")] = value
+        else:
+            for symbol in symbols:
+                self.table[(m_config, symbol)] = value
 
     def __repr__(self):
         return "\n".join([str(rule) for rule in self.rules])

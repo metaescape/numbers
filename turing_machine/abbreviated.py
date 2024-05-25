@@ -172,7 +172,7 @@ class Miss1(abbreviatedTable):
     def __init__(self, success, fail, alpha):
         super().__init__()
 
-        self.add_transition(alpha, ["R"], success)
+        self.add_transition(alpha, [], success)
         self.add_transition("_", ["R"], fail)
         self.add_transition("*", ["R"], Find1(success, fail, alpha))
 
@@ -231,12 +231,20 @@ class Right(abbreviatedTable):
 
 
 class FindThenLeft(abbreviatedTable):
+    """
+    f' state in the paper
+    """
+
     def __init__(self, success, fail, alpha):
         super().__init__()
         self.set_alias(Find(Left(success), fail, alpha))
 
 
 class FindThenRight(abbreviatedTable):
+    """
+    f'' state in the paper
+    """
+
     def __init__(self, success, fail, alpha):
         super().__init__()
         self.set_alias(Find(Right(success), fail, alpha))
@@ -334,7 +342,9 @@ class Compare1(abbreviatedTable):
         super().__init__()
         for alpha in SkelotonCompiler.vocab:
             self.add_transition(
-                alpha, [], FindThenLeft(Compare2(success, fail, "0"), fail, y)
+                alpha,
+                [],
+                FindThenLeft(Compare2(success, fail, alpha), fail, y),
             )
 
 
@@ -370,6 +380,10 @@ class CompareThenErase(abbreviatedTable):
 
 
 class FindRight(abbreviatedTable):
+    """
+    g m-function in paper
+    """
+
     def __init__(self, *args):
         super().__init__()
         if len(args) == 1:
