@@ -1,3 +1,6 @@
+test-machine:
+	python -m turing_machine.op_extend
+
 test-abb:
 	python -m turing_machine.abbreviated
 

@@ -1,11 +1,18 @@
 """
-Simulate a Turing machine , the length of operations in transition rules is variable
-
-support two directions: "L" and "R", Writing symbol support "$"(start), "x", "0", "1", "_"(erase or None)
-
-support match any symbol with "*", also with pretty print for complete configuration
-
 This is almost the reproduction of chapter 3 "Examples of computing machines" in the Turing's 1936 paper. 
+
+Features: 
+
+- Support "*" in scanned symbol, which means match any symbol;
+
+- The length of operations in the transition rules is variable;
+
+- Action: "L" , "R" and "N" (no move);
+
+- Writing symbols:  "$"(start), "x", "0", "1", "_"(erase or None) or any other symbols;
+
+- pretty print for complete configuration
+
 
 Author: Metaesc
 Email: metaescape@foxmail.com
