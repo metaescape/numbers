@@ -1,7 +1,9 @@
 """
 This script almost reproduces Chapter 7, "Detailed description of the universal machine" from Turing's 1936 paper.
 
-Use the library defined in "abbreviated.py" to build a universal machine.
+Using the library defined in "abbreviated.py" to build a universal machine.
+
+Note:
 
 There are different universal machines for different types of encoding. 
 
@@ -19,12 +21,10 @@ try:
         Find,
         FindRight,
         EraseAllMark,
-        Compare,
         abbreviatedTable,
         CompareThenErase,
         Erase,
         FindThenLeft,
-        FindThenRight,
         Left,
         PrintEndTwo,
         CopyThenEraseThree,
@@ -38,12 +38,10 @@ except:
         Find,
         FindRight,
         EraseAllMark,
-        Compare,
         abbreviatedTable,
         CompareThenErase,
         Erase,
         FindThenLeft,
-        FindThenRight,
         Left,
         PrintEndTwo,
         CopyThenEraseThree,
@@ -458,7 +456,7 @@ def test_universal_machine():
     encoder = Encoder(bcek_table, {"0", "1", "$"}, {"_", "x"})
     tm = create_universal_machine(encoder.standard_description)
     total = 50699
-    tm.run(steps=total, verbose=range(total - 100, total))
+    tm.run(steps=total, verbose=range(total - 10, total))
     print(tm.get_decimal())
     return tm
 
