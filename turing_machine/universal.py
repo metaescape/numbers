@@ -47,7 +47,7 @@ except:
         CopyThenEraseThree,
         CopyThenEraseTwo,
     )
-    from encoding import Encoder
+    from encoding import Encodestrr
 
 
 class MarkRightConfig(abbreviatedTable):

@@ -82,13 +82,17 @@ class TuringMachine:
 
     def get_sequence(self):
         result = []
-        for i in range(0, len(self.tape), 2):
-            if self.tape[i] in ("0", "1"):
+        for i in range(0, self.max_right + 1, 2):
+            if self.tape[i] not in {"$", "_"}:
                 result.append(self.tape[i])
         return "".join(result)
 
     def get_binary(self):
-        return "0." + self.get_sequence()
+        seq = self.get_sequence()
+        if set(seq) == {"0", "1"}:
+            return "0." + seq
+        else:
+            raise Exception(f"sequence is not binary: {seq}")
 
     def get_history(self):
         return (
@@ -315,11 +319,7 @@ def test_increment_machine():
         print(int(tm.get_sequence()[::-1], 2))
 
 
-def test_sqrt_root_machine():
-    """
-    Turing machine for find sqrt root, reproduce the example in chapter 6 of the book "Annoted Turing"
-    """
-
+def create_sqrt2_table():
     table = Table()
     description = [
         ("begin", "_", ["$", "R", "$", "R", "1"], "new"),
@@ -385,9 +385,16 @@ def test_sqrt_root_machine():
         ("cleanup", "_", [], "new"),
         ("cleanup", "*", ["_", "R", "R"], "cleanup"),
     ]
-
     for rule in description:
         table.add_rule(TransitionRule(*rule))
+    return table
+
+
+def test_sqrt_root_machine():
+    """
+    Turing machine for find sqrt root, reproduce the example in chapter 6 of the book "Annoted Turing"
+    """
+    table = create_sqrt2_table()
 
     print("run sqrt(2) turing machine")
 

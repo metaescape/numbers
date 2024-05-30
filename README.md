@@ -21,3 +21,7 @@ To run the tests for the universal Turing machine:
 - Use `make test-uni`.
 
 Alternatively, you can manually run the commands in the Makefile.
+
+To run the tests for the reduction of the halting problem:
+
+- Use `make test-reduce`.

@@ -9,3 +9,6 @@ test-encode:
 
 test-uni:
 	python -m turing_machine.universal
+
+test-reduce:
+	python -m turing_machine.reduction
