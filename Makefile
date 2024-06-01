@@ -12,3 +12,6 @@ test-uni:
 
 test-reduce:
 	python -m turing_machine.reduction
+
+test-self:
+	python -m turing_machine.self

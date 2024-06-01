@@ -330,7 +330,7 @@ class Encoder:
         ], "The move operation should be L, R, or N"
         assert (
             print in self.vocab
-        ), "The print operation should be in the vocabulary"
+        ), f"The print operation should be in the vocabulary, {print} is not in {self.vocab}"
         return self.std_map[print] + move
 
     def get_inner_m_config(self, m_config: str):

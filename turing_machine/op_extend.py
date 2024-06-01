@@ -83,7 +83,10 @@ class TuringMachine:
     def get_sequence(self):
         result = []
         for i in range(0, self.max_right + 1, 2):
-            if self.tape[i] not in {"$", "_"}:
+            if self.tape[i] not in {
+                "$",
+                "_",
+            }:
                 result.append(self.tape[i])
         return "".join(result)
 
@@ -140,6 +143,7 @@ class TuringMachine:
 
                 elif operation != "N":
                     write_symbol = operation
+
                     self.tape[self.head_position] = write_symbol
 
             self.current_state = next_m_config

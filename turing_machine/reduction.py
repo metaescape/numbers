@@ -26,7 +26,7 @@ except:
     )
 
 
-def traslator0(machine: Table):
+def translator0(machine: Table):
     """
     The 0 translator takes a Table of a Turing machine M as input and produces a new table of
     a Turing machine M' that is equivalent to M except that the first 0 printed by M is replaced by "-".
@@ -102,7 +102,7 @@ def test_1_3_machine_rewrite():
     tm.run(steps=20)
     origin_seq = tm.get_sequence()
 
-    new_table = traslator0(bcek_table)
+    new_table = translator0(bcek_table)
     new_tm = TuringMachine(new_table, "b")
     print(new_table)
     print("run 0 translator")
@@ -121,7 +121,7 @@ def test_sqrt2_macine_rewrite():
     tm.run(steps=10000)
     origin_seq = tm.get_sequence()
 
-    new_table = traslator0(table)
+    new_table = translator0(table)
     new_tm = TuringMachine(new_table, "begin")
     print("run sqrt2 machine after 0 translator")
     new_tm.run(steps=10000)

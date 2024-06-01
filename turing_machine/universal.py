@@ -21,7 +21,7 @@ try:
         Find,
         FindRight,
         EraseAllMark,
-        abbreviatedTable,
+        AbbreviatedTable,
         CompareThenErase,
         Erase,
         FindThenLeft,
@@ -38,7 +38,7 @@ except:
         Find,
         FindRight,
         EraseAllMark,
-        abbreviatedTable,
+        AbbreviatedTable,
         CompareThenErase,
         Erase,
         FindThenLeft,
@@ -47,10 +47,10 @@ except:
         CopyThenEraseThree,
         CopyThenEraseTwo,
     )
-    from encoding import Encodestrr
+    from encoding import Encoder
 
 
-class MarkRightConfig(abbreviatedTable):
+class MarkRightConfig(AbbreviatedTable):
     """
     con stat in the paper
     start from a Figure square, mark the first m-configuration and symbol sequence( e.g DAAAADCC) to the right using x
@@ -62,7 +62,7 @@ class MarkRightConfig(abbreviatedTable):
         self.add_transition("*", ["R", "R"], self)
 
 
-class MarkRightConfig1(abbreviatedTable):
+class MarkRightConfig1(AbbreviatedTable):
     def __init__(self, success, x):
         super().__init__()
         self.add_transition("A", ["R", x, "R"], MarkRightConfig1(success, x))
@@ -70,14 +70,14 @@ class MarkRightConfig1(abbreviatedTable):
         self.add_transition("_", ["D", "R", x, "R", "R", "R"], success)
 
 
-class MarkRightConfig2(abbreviatedTable):
+class MarkRightConfig2(AbbreviatedTable):
     def __init__(self, success, x):
         super().__init__()
         self.add_transition("C", ["R", x, "R"], MarkRightConfig2(success, x))
         self.add_transition("*", ["R", "R"], success)
 
 
-class EntryUTM(abbreviatedTable):
+class EntryUTM(AbbreviatedTable):
     """
     the fisrt state of the universal machine
     """
@@ -87,7 +87,7 @@ class EntryUTM(abbreviatedTable):
         self.add_transition("*", "R", Find(EntryUTM1(), EntryUTM1(), "::"))
 
 
-class EntryUTM1(abbreviatedTable):
+class EntryUTM1(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         self.add_transition(
@@ -97,7 +97,7 @@ class EntryUTM1(abbreviatedTable):
         )  # print q1 state to tape,so this should be the first state of any machine
 
 
-class MarkLastConfig(abbreviatedTable):
+class MarkLastConfig(AbbreviatedTable):
     """
     anf state in the paper
     """
@@ -107,13 +107,13 @@ class MarkLastConfig(abbreviatedTable):
         self.set_alias(FindRight(MarkLastConfig1(), ":"))
 
 
-class MarkLastConfig1(abbreviatedTable):
+class MarkLastConfig1(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         self.set_alias(MarkRightConfig(MarkNextConfig(), "y"))
 
 
-class MarkNextConfig(abbreviatedTable):
+class MarkNextConfig(AbbreviatedTable):
     """
     kom state in the paper
     """
@@ -127,7 +127,7 @@ class MarkNextConfig(abbreviatedTable):
         self.add_transition("*", ["L"], self)
 
 
-class CompareXYSequence(abbreviatedTable):
+class CompareXYSequence(AbbreviatedTable):
     """kmp state in the paper"""
 
     def __init__(self):
@@ -139,7 +139,7 @@ class CompareXYSequence(abbreviatedTable):
         )
 
 
-class SAME(abbreviatedTable):
+class SAME(AbbreviatedTable):
     """sim state in the paper
     mark next-m-configuration in the instruction with y
     """
@@ -149,7 +149,7 @@ class SAME(abbreviatedTable):
         self.set_alias(FindThenLeft(SAME1(), SAME2(), "z"))
 
 
-class SAME1(abbreviatedTable):
+class SAME1(AbbreviatedTable):
     """sim1 state in the paper"""
 
     def __init__(self):
@@ -157,7 +157,7 @@ class SAME1(abbreviatedTable):
         self.set_alias(MarkRightConfig(SAME2(), ""))
 
 
-class SAME2(abbreviatedTable):
+class SAME2(AbbreviatedTable):
     """sim2 state in the paper"""
 
     def __init__(self):
@@ -166,7 +166,7 @@ class SAME2(abbreviatedTable):
         self.add_transition("*", ["L", "u", "R", "R", "R"], self)
 
 
-class SAME3(abbreviatedTable):
+class SAME3(AbbreviatedTable):
     """sim3 state in the paper"""
 
     def __init__(self):
@@ -176,7 +176,7 @@ class SAME3(abbreviatedTable):
         self.add_transition("*", ["L", "y"], Erase(MarkLastFullConfig(), "z"))
 
 
-class MarkLastFullConfig(abbreviatedTable):
+class MarkLastFullConfig(AbbreviatedTable):
     """
     mk/mf state in the paper, FullConfig is the same as Complete configuration
     this state will mark the sequence left to the m-configuation and current symbol in the last complete configuration with x
@@ -189,7 +189,7 @@ class MarkLastFullConfig(abbreviatedTable):
         self.set_alias(FindRight(MarkLastFullConfig1(), ":"))
 
 
-class MarkLastFullConfig1(abbreviatedTable):
+class MarkLastFullConfig1(AbbreviatedTable):
 
     def __init__(self):
         super().__init__()
@@ -199,7 +199,7 @@ class MarkLastFullConfig1(abbreviatedTable):
         self.add_transition("*", ["R"] * 2, self)
 
 
-class MarkLastFullConfig2(abbreviatedTable):
+class MarkLastFullConfig2(AbbreviatedTable):
     """
     mark the first DCCC.. to the left of m-configuation and current symbol in the last complete configuration with x
     """
@@ -213,7 +213,7 @@ class MarkLastFullConfig2(abbreviatedTable):
         )
 
 
-class MarkLastFullConfig3(abbreviatedTable):
+class MarkLastFullConfig3(AbbreviatedTable):
     """
     Mark the remain DCC.. to the left o m-configuation in the last complete configuration with v
     """
@@ -224,7 +224,7 @@ class MarkLastFullConfig3(abbreviatedTable):
         self.add_transition("*", ["R", "v", "L", "L", "L"], self)
 
 
-class MarkLastFullConfig4(abbreviatedTable):
+class MarkLastFullConfig4(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         self.set_alias(
@@ -232,7 +232,7 @@ class MarkLastFullConfig4(abbreviatedTable):
         )  # skip the m-config and current symbol
 
 
-class MarkLastFullConfig5(abbreviatedTable):
+class MarkLastFullConfig5(AbbreviatedTable):
     """
     Mark all the DCC.. sybmol to the right of m-configuration and current symbol in last complete configuration with w
     """
@@ -243,7 +243,7 @@ class MarkLastFullConfig5(abbreviatedTable):
         self.add_transition("*", ["R", "w", "R"], self)
 
 
-class Print0or1(abbreviatedTable):
+class Print0or1(AbbreviatedTable):
     """
     eb state in the paper
     go back to instruction section, if 1 or 0 is Printed in the  instruction, print it to the end of complete configuration
@@ -254,7 +254,7 @@ class Print0or1(abbreviatedTable):
         self.set_alias(Find(Print0or1_1(), Inst(), "u"))
 
 
-class Print0or1_1(abbreviatedTable):
+class Print0or1_1(AbbreviatedTable):
     """ """
 
     def __init__(self):
@@ -263,35 +263,35 @@ class Print0or1_1(abbreviatedTable):
         self.add_transition("*", ["L"] * 3, Print0or1_2())
 
 
-class Print0or1_2(abbreviatedTable):
+class Print0or1_2(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         self.add_transition("D", ["R"] * 4, Print0or1_3())
         self.add_transition("*", [], Inst())
 
 
-class Print0or1_3(abbreviatedTable):
+class Print0or1_3(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         self.add_transition("C", ["R"] * 2, Print0or1_4())
         self.add_transition("*", [], Inst())
 
 
-class Print0or1_4(abbreviatedTable):
+class Print0or1_4(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         self.add_transition("C", ["R"] * 2, Print0or1_5())
         self.add_transition("*", [], PrintEndTwo(Inst(), "0", ":"))
 
 
-class Print0or1_5(abbreviatedTable):
+class Print0or1_5(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         self.add_transition("C", ["R"] * 2, Print0or1_5())
         self.add_transition("*", [], PrintEndTwo(Inst(), "1", ":"))
 
 
-class Inst(abbreviatedTable):
+class Inst(AbbreviatedTable):
     """
     inst state in the paper, create a new complete configuration base on the instruction and last complete configuration
     """
@@ -302,7 +302,7 @@ class Inst(abbreviatedTable):
         self.set_alias(FindRight(Left(Inst1()), "u"))
 
 
-class Inst1(abbreviatedTable):
+class Inst1(AbbreviatedTable):
     def __init__(self):
         super().__init__()
         clean_and_restart = EraseAllMark(MarkLastConfig())
@@ -323,12 +323,25 @@ class Inst1(abbreviatedTable):
         )
 
 
-class CopyThenEraseFive(abbreviatedTable):
+class CopyThenEraseFive(AbbreviatedTable):
     def __init__(self, success, x, y, z, u, v):
         super().__init__()
         self.set_alias(
             CopyThenEraseThree(CopyThenEraseTwo(success, u, v), x, y, z)
         )
+
+
+def show_number_from_universal_tape(tm):
+    seq = tm.get_sequence()
+    number_seq = []
+    for i in seq:
+        if i in "01":
+            number_seq.append(i)
+    print(f"0 1 squence is: {number_seq}")
+    result = 0
+    for i in range(len(number_seq)):
+        result += int(number_seq[i]) * 2 ** (-i - 1)
+    print(f"decimal is: {result}")
 
 
 def create_universal_machine(instruction):
@@ -457,7 +470,7 @@ def test_universal_machine():
     tm = create_universal_machine(encoder.standard_description)
     total = 50699
     tm.run(steps=total, verbose=range(total - 10, total))
-    print(tm.get_decimal())
+    show_number_from_universal_tape(tm)
     return tm
 
 

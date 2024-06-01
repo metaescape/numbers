@@ -50,6 +50,7 @@ class SkelotonCompiler(type):
         cls._instances2name = {}
         cls.cnt = 1
         cls.obj2name = {}
+        cls.vocab = {"0", "1"}
 
     @classmethod
     def set_vocab(cls, vocab):
@@ -132,14 +133,14 @@ class SkelotonCompiler(type):
         return state
 
 
-class abbreviatedTable(metaclass=SkelotonCompiler):
+class AbbreviatedTable(metaclass=SkelotonCompiler):
     def __init__(self):
         self.transitions = []
         self.alias = None
 
     def add_transition(self, symbol, operations, next_m_config):
-        if next_m_config in abbreviatedTable._instances:
-            next_m_config = abbreviatedTable._instances[next_m_config]
+        if next_m_config in AbbreviatedTable._instances:
+            next_m_config = AbbreviatedTable._instances[next_m_config]
         self.transitions.append((symbol, operations, next_m_config))
         return
 
@@ -147,7 +148,7 @@ class abbreviatedTable(metaclass=SkelotonCompiler):
         self.alias = abbreviation
 
 
-class Find(abbreviatedTable):
+class Find(AbbreviatedTable):
     """
     find the first occurrence of alpha in the xed Figure square ont the tape
     transfer to success if alpha is found, otherwise transfer to fail
@@ -159,7 +160,7 @@ class Find(abbreviatedTable):
         self.add_transition("*", ["L"], self)
 
 
-class Find1(abbreviatedTable):
+class Find1(AbbreviatedTable):
     def __init__(self, success, fail, alpha):
         super().__init__()
 
@@ -168,7 +169,7 @@ class Find1(abbreviatedTable):
         self.add_transition("*", ["R"], self)
 
 
-class Miss1(abbreviatedTable):
+class Miss1(AbbreviatedTable):
     def __init__(self, success, fail, alpha):
         super().__init__()
 
@@ -177,7 +178,7 @@ class Miss1(abbreviatedTable):
         self.add_transition("*", ["R"], Find1(success, fail, alpha))
 
 
-class Erase(abbreviatedTable):
+class Erase(AbbreviatedTable):
 
     def __init__(self, *args):
         """
@@ -195,13 +196,13 @@ class Erase(abbreviatedTable):
             self.set_alias(Erase(Erase(success, alpha), success, alpha))
 
 
-class Erase1(abbreviatedTable):
+class Erase1(AbbreviatedTable):
     def __init__(self, success, fail, alpha):
         super().__init__()
         self.add_transition(alpha, ["_"], success)
 
 
-class PrintEnd(abbreviatedTable):
+class PrintEnd(AbbreviatedTable):
     """
     append alpha to the end of tape (first nonempty Figure square)
     """
@@ -211,26 +212,26 @@ class PrintEnd(abbreviatedTable):
         self.set_alias(Find(PrintEnd1(success, beta), success, "$"))
 
 
-class PrintEnd1(abbreviatedTable):
+class PrintEnd1(AbbreviatedTable):
     def __init__(self, success, beta):
         super().__init__()
         self.add_transition("_", [beta], success)
         self.add_transition("*", ["R", "R"], self)
 
 
-class Left(abbreviatedTable):
+class Left(AbbreviatedTable):
     def __init__(self, success):
         super().__init__()
         self.add_transition("*", ["L"], success)
 
 
-class Right(abbreviatedTable):
+class Right(AbbreviatedTable):
     def __init__(self, success):
         super().__init__()
         self.add_transition("*", ["R"], success)
 
 
-class FindThenLeft(abbreviatedTable):
+class FindThenLeft(AbbreviatedTable):
     """
     f' state in the paper
     """
@@ -240,7 +241,7 @@ class FindThenLeft(abbreviatedTable):
         self.set_alias(Find(Left(success), fail, alpha))
 
 
-class FindThenRight(abbreviatedTable):
+class FindThenRight(AbbreviatedTable):
     """
     f'' state in the paper
     """
@@ -250,23 +251,23 @@ class FindThenRight(abbreviatedTable):
         self.set_alias(Find(Right(success), fail, alpha))
 
 
-class Copy(abbreviatedTable):
+class Copy(AbbreviatedTable):
     def __init__(self, success, fail, x):
         """
-        copy the xed figure to the end empty figure of the tape
+        copy the marked figure to the end empty figure of the tape
         """
         super().__init__()
         self.set_alias(FindThenLeft(Copy1(success), fail, x))
 
 
-class Copy1(abbreviatedTable):
+class Copy1(AbbreviatedTable):
     def __init__(self, success):
         super().__init__()
         for alpha in SkelotonCompiler.vocab:  # current support "0", "1"
             self.add_transition(alpha, [], PrintEnd(success, alpha))
 
 
-class CopyThenErase(abbreviatedTable):
+class CopyThenErase(AbbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 3:
@@ -281,7 +282,7 @@ class CopyThenErase(abbreviatedTable):
             )
 
 
-class Replace(abbreviatedTable):
+class Replace(AbbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 4:
@@ -296,13 +297,13 @@ class Replace(abbreviatedTable):
             )
 
 
-class Replace1(abbreviatedTable):
+class Replace1(AbbreviatedTable):
     def __init__(self, success, beta):
         super().__init__()
         self.add_transition("*", ["_", beta], success)
 
 
-class CopyThenReplace(abbreviatedTable):
+class CopyThenReplace(AbbreviatedTable):
     """
     This is the same as copy, this is just a test to the combination of the abbreviated tables
     """
@@ -323,7 +324,7 @@ class CopyThenReplace(abbreviatedTable):
             )
 
 
-class Compare(abbreviatedTable):
+class Compare(AbbreviatedTable):
     def __init__(self, success, fail, miss, x, y):
         """
         compare the markedd figures and transfer to success if they are equal, otherwise transfer to fail
@@ -334,7 +335,7 @@ class Compare(abbreviatedTable):
         self.set_alias(FindThenLeft(Compare1(success, fail, y), miss, x))
 
 
-class Compare1(abbreviatedTable):
+class Compare1(AbbreviatedTable):
     def __init__(self, success, fail, y):
         """
         find x
@@ -348,14 +349,14 @@ class Compare1(abbreviatedTable):
             )
 
 
-class Compare2(abbreviatedTable):
+class Compare2(AbbreviatedTable):
     def __init__(self, success, fail, alpha):
         super().__init__()
         self.add_transition(alpha, [], success)
         self.add_transition("*", [], fail)
 
 
-class CompareThenErase(abbreviatedTable):
+class CompareThenErase(AbbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 5:
@@ -379,7 +380,7 @@ class CompareThenErase(abbreviatedTable):
             )
 
 
-class FindRight(abbreviatedTable):
+class FindRight(AbbreviatedTable):
     """
     g m-function in paper
     """
@@ -397,7 +398,7 @@ class FindRight(abbreviatedTable):
             self.set_alias(FindRight(FindRight1(success, alpha)))
 
 
-class FindRight1(abbreviatedTable):
+class FindRight1(AbbreviatedTable):
     def __init__(self, *args):
         super().__init__()
         if len(args) == 1:
@@ -410,7 +411,7 @@ class FindRight1(abbreviatedTable):
             self.add_transition(alpha, [], success)
 
 
-class PrintEndTwo(abbreviatedTable):
+class PrintEndTwo(AbbreviatedTable):
     """
     append alpha to the end of tape, then append beta to the end of the tape
     """
@@ -420,7 +421,7 @@ class PrintEndTwo(abbreviatedTable):
         self.set_alias(PrintEnd(PrintEnd(success, beta), alpha))
 
 
-class CopyThenEraseTwo(abbreviatedTable):
+class CopyThenEraseTwo(AbbreviatedTable):
     """
     copy all the figures marked by x to the end of tape then erase all x
 
@@ -432,7 +433,7 @@ class CopyThenEraseTwo(abbreviatedTable):
         self.set_alias(CopyThenErase(CopyThenErase(success, y), x))
 
 
-class CopyThenEraseThree(abbreviatedTable):
+class CopyThenEraseThree(AbbreviatedTable):
     """
     copy all the figures marked by x to the end of tape then erase all x
 
@@ -446,14 +447,14 @@ class CopyThenEraseThree(abbreviatedTable):
         self.set_alias(CopyThenErase(CopyThenEraseTwo(success, y, z), x))
 
 
-class EraseAllMark(abbreviatedTable):
+class EraseAllMark(AbbreviatedTable):
     def __init__(self, success):
         super().__init__()
         self.add_transition("*", ["L"], self)
         self.add_transition("$", ["R"], EraseAllMark1(success))
 
 
-class EraseAllMark1(abbreviatedTable):
+class EraseAllMark1(AbbreviatedTable):
     def __init__(self, success):
         super().__init__()
         self.add_transition("*", ["R", "_", "R"], self)
