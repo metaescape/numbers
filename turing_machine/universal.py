@@ -30,7 +30,7 @@ try:
         CopyThenEraseThree,
         CopyThenEraseTwo,
     )
-    from turing_machine.encoding import Encoder
+    from turing_machine.encoding import Assembler
 except:
     from op_extend import Table, TransitionRule, TuringMachine
     from abbreviated import (
@@ -47,7 +47,7 @@ except:
         CopyThenEraseThree,
         CopyThenEraseTwo,
     )
-    from encoding import Encoder
+    from encoding import Assembler
 
 
 class MarkRightConfig(AbbreviatedTable):
@@ -399,7 +399,7 @@ def show_1_3_table_description():
     tm.run(steps=5, verbose=False)
     print(tm.get_history())
 
-    encoder = Encoder(bcek_table, {"0", "1", "$"}, {"_", "x"})
+    encoder = Assembler(bcek_table, {"0", "1", "$"}, {"_", "x"})
 
     tm = TuringMachine(encoder.std_form_table, encoder.get_inner_m_config("b"))
     pprint(encoder.std_form_table)
@@ -423,7 +423,7 @@ def add_1_3_code_to_machine():
     bcek_table.add_rule(TransitionRule("b", "_", ["0", "R"], "c"))
     bcek_table.add_rule(TransitionRule("c", "_", ["1", "R"], "b"))
 
-    encoder = Encoder(bcek_table, {"0", "1", "$"}, {"_", "x"})
+    encoder = Assembler(bcek_table, {"0", "1", "$"}, {"_", "x"})
     print(encoder.standard_description)
     tm = TuringMachine({}, "b")
     tm.load_instruction(encoder.standard_description)
@@ -438,7 +438,7 @@ def test_mark_right():
 
     bcek_table.add_rule(TransitionRule("b", "_", ["0", "R"], "c"))
     bcek_table.add_rule(TransitionRule("c", "_", ["1", "R"], "b"))
-    encoder = Encoder(bcek_table, {"0", "1", "$"}, {"_", "x"})
+    encoder = Assembler(bcek_table, {"0", "1", "$"}, {"_", "x"})
 
     SkelotonCompiler.reset()
     e = MarkRightConfig("success", "x")
@@ -466,7 +466,7 @@ def test_universal_machine():
     bcek_table = Table()
     bcek_table.add_rule(TransitionRule("b", "_", ["0", "R"], "c"))
     bcek_table.add_rule(TransitionRule("c", "_", ["1", "R"], "b"))
-    encoder = Encoder(bcek_table, {"0", "1", "$"}, {"_", "x"})
+    encoder = Assembler(bcek_table, {"0", "1", "$"}, {"_", "x"})
     tm = create_universal_machine(encoder.standard_description)
     total = 50699
     tm.run(steps=total, verbose=range(total - 10, total))

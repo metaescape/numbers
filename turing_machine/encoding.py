@@ -37,7 +37,7 @@ except:
     from abbreviated import SkelotonCompiler, FindRight, EraseAllMark, Compare
 
 
-class Encoder:
+class Assembler:
     def __init__(
         self, table: Table, figure_vocab: set, erase_vocab: set
     ) -> None:
@@ -263,15 +263,6 @@ class Encoder:
         return new_table
 
     @property
-    def standard_form(self):
-        codes = []
-        for rule in self.std_form_table.rules:
-            m_config, symbol, operations, next_m_config = rule
-            print, move = operations
-            codes.append(f"{m_config}{symbol}{print}{move}{next_m_config};")
-        return "".join(codes)
-
-    @property
     def standard_description(self):
         """
         Encode the transition table into standard description
@@ -363,7 +354,7 @@ def test_max_m_config_number():
     e = EraseAllMark("success")
     table = SkelotonCompiler.compile()
 
-    encoder = Encoder(table, {"0", "1"}, {"_", "x"})
+    encoder = Assembler(table, {"0", "1"}, {"_", "x"})
     pprint(table.table)
     pprint(encoder.q_cnt)
 
@@ -376,7 +367,7 @@ def test_expand_any_regex_symbol():
     rule = TransitionRule("q2", "*", ["R", "_", "R"], "q2")
     e = EraseAllMark("success")
     table = SkelotonCompiler.compile()
-    encoder = Encoder(table, {"0", "1"}, {"_", "x"})
+    encoder = Assembler(table, {"0", "1"}, {"_", "x"})
 
     rules = encoder.expand_any_regex_symbol(rule)
     pprint(rules)
@@ -414,7 +405,7 @@ def test_m_config_name_normalize():
         TransitionRule("c", "_", [], SkelotonCompiler.get_m_config_name(e))
     )
 
-    encoder = Encoder(table, {"0", "1"}, {"_", "x"})
+    encoder = Assembler(table, {"0", "1"}, {"_", "x"})
     pprint(encoder.m_config_std_table)
     pprint(encoder.name_map["b"])
 
@@ -428,7 +419,7 @@ def test_expand_operations():
     table = SkelotonCompiler.compile()
     rule = TransitionRule("b", "_", ["$", "R", "$", "R"], "c")
 
-    encoder = Encoder(table, {"0", "1", "$"}, {"_", "x"})
+    encoder = Assembler(table, {"0", "1", "$"}, {"_", "x"})
     pprint(encoder.expand_operations(rule))
     rule = TransitionRule("b", "_", ["$", "R", "$"], "c")
     pprint(encoder.expand_operations(rule))
@@ -453,7 +444,7 @@ def test_std_form_table_standard_encoding():
         TransitionRule("c", "_", [], SkelotonCompiler.get_m_config_name(e))
     )
 
-    encoder = Encoder(table, {"0", "1", "$"}, {"_", "x"})
+    encoder = Assembler(table, {"0", "1", "$"}, {"_", "x"})
     pprint("origin table:")
     pprint(encoder.origin_table)
     pprint("symbol expanded table:")
