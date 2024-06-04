@@ -57,6 +57,13 @@ class TuringMachine:
         """
         return (self.m_configuration, self.get_tape())
 
+    def set_tape(self, tape):
+        n = len(tape)
+        if n > len(self.tape):
+            self.tape.extend(["_"] * (n - len(self.tape)))
+        self.tape[:n] = tape
+        self.max_right = len(tape)
+
     def get_tape(self):
         """
         point: left or bracket
@@ -179,7 +186,9 @@ class TuringMachine:
 
 class TransitionRule:
 
-    def __init__(self, m_config, symbols, operations: list, next_m_config):
+    def __init__(
+        self, m_config: str, symbols, operations: list, next_m_config
+    ):
         """
         m_config: current state/m-configuration
         symbol: current symbol in the machine/under the reader, * match all symbols

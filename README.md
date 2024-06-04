@@ -1,8 +1,10 @@
-`natural.py`, `integer.py`, `rational.py`, `real.py` are the codes for Chapters 2, 4, and 5 of the book "Analysis" by Terence Tao.
+## `analysis/`
 
-`turing_machine/` Contains the code for Turing's 1936 paper.
+contains the codes for Chapters 2, 4, and 5 of the book "Analysis" by Terence Tao.
 
-## How to run the code for the Turing machine
+## `turing_machine/`
+
+contains the code for Turing's 1936 paper.
 
 To run the tests for the Turing machine:
 
