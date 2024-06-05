@@ -150,7 +150,7 @@ class AbbreviatedTable(metaclass=SkelotonCompiler):
 
 class Find(AbbreviatedTable):
     """
-    find the first occurrence of alpha in the xed Figure square ont the tape
+    find the first occurrence of alpha in the marked Figure square ont the tape
     transfer to success if alpha is found, otherwise transfer to fail
     """
 
@@ -542,7 +542,7 @@ def test_compile_find_and_move():
 def test_compile_copy_erase():
     from pprint import pprint
 
-    pprint("test copy xed and erase x")
+    pprint("test copy marked and erase x")
 
     SkelotonCompiler.reset()
     e = CopyThenErase("a", "x")

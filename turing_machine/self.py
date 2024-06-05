@@ -18,23 +18,23 @@ except:
     from encoding import Assembler
 
 SELF_VOCAB = [
-    "_",
-    "$",
     "R",
     "L",
-    "N",
-    "D",
+    "_",
+    "*",
     "A",
     "C",
+    "D",
+    "N",
     "P",
-    "*",
+    "$",
     "x",
     "y",
 ]
 
 
 class SelfEncoderDecoder(Assembler):
-    def __init__(self, table: Table, vocab: set = set(SELF_VOCAB)):
+    def __init__(self, table: Table, vocab=SELF_VOCAB):
         """
         Do not extend `*` symbol and do not convert the table to 5-tuple form.
         """
@@ -83,6 +83,9 @@ class SelfEncoderDecoder(Assembler):
         return "".join(result)
 
     def decode_rule(self, code: str):
+        """
+        all symbols on the tape are in {D,A,_}
+        """
         import re
 
         pattern = r"(DA+)|(DC*)"
@@ -104,15 +107,22 @@ class SelfEncoderDecoder(Assembler):
         rule = TransitionRule(m_config, symbol, operations, next_m_config)
         return rule
 
+    def encode_table(self):
+        result = []
+        for rule in self.m_config_std_table.rules:
+            result.append(self.encode_rule(rule))
+
+        return "".join(result)
+
+    def encode_to_print_inst(self, code):
+        """DADCCCCCCCCCDDAA will translate to PAPCCCCCCCCCPPAA"""
+        return code.replace("D", "P")
+
 
 def print_my_self():
     with open(__file__, "r") as f:
         lines = f.read()
         print(lines)
-
-
-def create_print_self_machine():
-    pass
 
 
 class ForwardSearch(AbbreviatedTable):
@@ -146,15 +156,32 @@ class FindFirstMark2(AbbreviatedTable):
         self.add_transition("D", [], Copy2End(success, "P"))
         self.add_transition("A", [], Copy2End(success, "A"))
         self.add_transition("C", [], Copy2End(success, "C"))
+        self.add_transition("_", ["R"], EraseBack(success))
 
 
 class Copy2End(AbbreviatedTable):
     def __init__(self, success, alpha):
         super().__init__()
         self.add_transition("_", [alpha, "R", "y"], PrintInst(success, "_"))
-        for char in SkelotonCompiler.vocab:
-            if char != "_":
-                self.add_transition(char, ["R", "R"], self)
+        self.add_transition("*", ["R", "R"], self)
+
+
+class EraseBack(AbbreviatedTable):
+    def __init__(self, success):
+        super().__init__()
+        self.add_transition("$", [], success)
+        self.add_transition("*", ["_", "L", "L"], self)
+
+
+def test_part_b_machine():
+    SkelotonCompiler.reset()
+    SkelotonCompiler.set_vocab(SELF_VOCAB)
+    b = PartB("success")
+    table = SkelotonCompiler.compile()
+
+    encoder = SelfEncoderDecoder(table)
+    print(encoder.encode_table())
+    print(encoder.encode_to_print_inst(encoder.encode_table()))
 
 
 def test_encode_decode_rule():
@@ -170,34 +197,30 @@ def test_encode_decode_rule():
 def test_compile_copy_erase():
     from pprint import pprint
 
-    pprint("test copy xed and erase x")
+    pprint("test copy marked and erase x")
 
     SkelotonCompiler.reset()
     SkelotonCompiler.set_vocab(SELF_VOCAB)
     b = PartB("success")
     table = SkelotonCompiler.compile()
 
+    encoder = SelfEncoderDecoder(table)
+
+    rule = TransitionRule("q1", "*", ["R", "R", "_"], "q2")
+    encoded = encoder.encode_rule(rule, True)
+
     pprint(table.table)
-    convert_to_code(table)
     tm = TuringMachine(table, SkelotonCompiler.get_m_config_name(b))
-    tm.set_tape(["$", "$", "D", "_", "A"])
-    tm.run(steps=50, verbose=True)
-    print(tm.get_tape())
+    tm.set_figures(encoded)
+    total = 1022
+    tm.run(steps=total, verbose=range(total - 50, total))
 
     return tm
-
-
-def convert_to_code(table: Table):
-    encoder = SelfEncoderDecoder(table)
-    res = []
-    # breakpoint()
-    print(encoder.q_cnt)
-    # print(encoder.std_form_table)
-    # print(len(encoder.standard_description))  # buggy, need to add new coding
 
 
 # 调用函数
 if __name__ == "__main__":
     print_my_self()
-    # test_compile_copy_erase()
     test_encode_decode_rule()
+    test_compile_copy_erase()
+    test_part_b_machine()

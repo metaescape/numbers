@@ -64,6 +64,13 @@ class TuringMachine:
         self.tape[:n] = tape
         self.max_right = len(tape)
 
+    def set_figures(self, string):
+        self.max_right = 2
+        self.tape[:2] = ["$", "$"]
+        for i in range(len(string)):
+            self.tape[self.max_right] = string[i]
+            self.max_right += 2
+
     def get_tape(self):
         """
         point: left or bracket
