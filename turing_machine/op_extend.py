@@ -264,6 +264,15 @@ class Table:
     def __repr__(self):
         return "\n".join([str(rule) for rule in self.rules])
 
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, Table):
+            return False
+        return self.table == value.table
+
+    def merge(self, other):
+        for rule in other.rules:
+            self.add_rule(rule)
+
 
 def test_1_3_machine():
     """

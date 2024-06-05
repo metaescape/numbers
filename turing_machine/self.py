@@ -17,6 +17,8 @@ except:
     )
     from encoding import Assembler
 
+import re
+
 SELF_VOCAB = [
     "R",
     "L",
@@ -86,7 +88,6 @@ class SelfEncoderDecoder(Assembler):
         """
         all symbols on the tape are in {D,A,_}
         """
-        import re
 
         pattern = r"(DA+)|(DC*)"
 
@@ -118,6 +119,44 @@ class SelfEncoderDecoder(Assembler):
         """DADCCCCCCCCCDDAA will translate to PAPCCCCCCCCCPPAA"""
         return code.replace("D", "P")
 
+    def decode_tape_str_to_table(self, code: str):
+        if "PA" in code:
+            code = code.replace("P", "D")
+            return self.generate_a_part(code)
+        else:
+            return self.decode_DADC_to_table(code)
+
+    def decode_DADC_to_table(self, code: str):
+        pattern = r"(DA+)|(DC*)"
+
+        # Find all matches according to the pattern
+        matches = re.findall(pattern, code)
+
+        result = ["".join(match) for match in matches]
+        table = Table()
+        i, j = 0, 1
+        while j < len(result):
+            while j < len(result) and "DA" not in result[j]:
+                j += 1
+            table.add_rule(self.decode_rule("".join(result[i : j + 1])))
+
+            i = j + 1
+            j += 2
+
+        return table
+
+    def generate_a_part(self, code: str):
+        operations = ["$", "R", "$", "R"]
+        for c in code:
+            operations.append(c)
+            operations.append("R")
+            operations.append("R")
+
+        rule = TransitionRule("q10", "_", operations, "q1")
+        table = Table()
+        table.add_rule(rule)
+        return table
+
 
 def print_my_self():
     with open(__file__, "r") as f:
@@ -130,7 +169,7 @@ class ForwardSearch(AbbreviatedTable):
         super().__init__()
 
 
-class PartB(AbbreviatedTable):
+class PartB_(AbbreviatedTable):
     def __init__(self, success):
         super().__init__()
         self.add_transition("$", ["R"], PrintInst(success, "_"))
@@ -176,12 +215,19 @@ class EraseBack(AbbreviatedTable):
 def test_part_b_machine():
     SkelotonCompiler.reset()
     SkelotonCompiler.set_vocab(SELF_VOCAB)
-    b = PartB("success")
+    b = PartB_("success")
     table = SkelotonCompiler.compile()
 
     encoder = SelfEncoderDecoder(table)
     print(encoder.encode_table())
-    print(encoder.encode_to_print_inst(encoder.encode_table()))
+
+    a_part = encoder.encode_to_print_inst(encoder.encode_table())
+    print(a_part)
+
+    decoded_table = encoder.decode_tape_str_to_table(encoder.encode_table())
+    print(decoded_table)
+    assert encoder.m_config_std_table == decoded_table
+    print(encoder.decode_tape_str_to_table(a_part))
 
 
 def test_encode_decode_rule():
@@ -201,7 +247,7 @@ def test_compile_copy_erase():
 
     SkelotonCompiler.reset()
     SkelotonCompiler.set_vocab(SELF_VOCAB)
-    b = PartB("success")
+    b = PartB_("success")
     table = SkelotonCompiler.compile()
 
     encoder = SelfEncoderDecoder(table)
@@ -218,9 +264,30 @@ def test_compile_copy_erase():
     return tm
 
 
+def test_self_print_machine():
+    import copy
+
+    SkelotonCompiler.reset()
+    SkelotonCompiler.set_vocab(SELF_VOCAB)
+    b = PrintInst("success", "_")
+    table = SkelotonCompiler.compile()
+
+    encoder = SelfEncoderDecoder(table)
+    a_part_str = encoder.encode_to_print_inst(encoder.encode_table())
+    a_part = encoder.decode_tape_str_to_table(a_part_str)
+    b_part = encoder.m_config_std_table
+    ab_self_print = copy.deepcopy(b_part)
+    ab_self_print.merge(a_part)
+    # print(ab_self_print)
+    tm = TuringMachine(ab_self_print, "q10")
+    total = 1000
+    tm.run(steps=total, verbose=range(total - 50, total))
+
+
 # 调用函数
 if __name__ == "__main__":
-    print_my_self()
+    # print_my_self()
     test_encode_decode_rule()
     test_compile_copy_erase()
     test_part_b_machine()
+    test_self_print_machine()
