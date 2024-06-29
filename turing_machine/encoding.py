@@ -9,7 +9,7 @@ It implements the following utilities:
 Just as we can compile high-level languages to low-level languages at different optimization levels, 
 we can compile abbreviated transition tables with different encoding levels, such as:
 - 5-tuple description, e.g., q0 S1 PS1 R q1
-  This means the state q0 reads the symbol S1, writes the symbol PS1, moves the tape to the right, and transitions to the state q1.
+  This means the state q0 reads the symbol S1, writes the symbol S1, moves the tape to the right, and go to state q1.
 - Standard description level (using D, A, C to represent all symbols and state names)
 
 The encoding level affects the simplicity and conciseness of the implementation of universal machines, but

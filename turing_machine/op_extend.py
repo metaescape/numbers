@@ -3,7 +3,7 @@ This is almost the reproduction of chapter 3 "Examples of computing machines" in
 
 Features: 
 
-- Support "*" in scanned symbol, which means match any symbol;
+- Support "*" in the vocabulary of scanned symbols, which means match any symbol;
 
 - The length of operations in the transition rules is variable;
 
@@ -133,7 +133,7 @@ class TuringMachine:
         return result
 
     def step(self, idx, verbose):
-        """执行图灵机的单步操作"""
+        """single step"""
         configuration = self.configuration
 
         if configuration in self.table:
@@ -171,7 +171,6 @@ class TuringMachine:
             )
 
     def run(self, steps=1000, verbose=False):
-        """运行图灵机直到达到终止状态"""
         for i in range(steps):
             self.step(i, verbose=verbose)
 

@@ -1,9 +1,10 @@
 """
+This script almost reproduces chapter 4 "Abbreviated tables" in the Turing's 1936 paper, 
+replacing the human brain with python code to interpret/compile the abbreviated tables
+
 Implementation of the abbreviated Tables and a compiler to translate the high level abbreviated tables 
 to the low level transition rules
 
-This script almost reproduces chapter 4 "Abbreviated tables" in the Turing's 1936 paper, 
-replacing the human brain with python code to interpret the abbreviated tables
 
 Author: Metaesc
 Email: metaescape@foxmail.com
