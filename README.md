@@ -1,3 +1,9 @@
+Codes about numbers, logic, and computation.
+
+## python requirements
+
+python3.8 or later
+
 ## `analysis/`
 
 contains the codes for Chapters 2, 4, and 5 of the book "Analysis" by Terence Tao.
@@ -27,3 +33,14 @@ Alternatively, you can manually run the commands in the Makefile.
 To run the tests for the reduction of the halting problem:
 
 - Use `make test-reduce`.
+
+## `lambda/`
+
+interpreter for lambda calculus and combinatory logic.
+
+To run the tests for the lambda calculus:
+
+```bash
+cd lambda
+python rewriter.py
+```
