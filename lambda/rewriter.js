@@ -1,13 +1,14 @@
 function runCode() {
   // 获取代码块的内容
-  var codeContent = document.getElementById("code").innerText;
+  var codeContent = document.getElementById("rewriter-inputs").innerText;
 
   // 运行代码并显示结果
   try {
     read_and_parse(codeContent);
   } catch (error) {
     console.error(error);
-    document.getElementById("output").innerText = "Error: " + error.message;
+    document.getElementById("rewriter-outputs").innerText =
+      "Error: " + error.message;
   }
 }
 
@@ -140,6 +141,8 @@ function read_and_parse(string) {
   const expressions_str = string.split("\n");
 
   const subst_map = {};
+  const rewriterOutputs = document.getElementById("rewriter-outputs");
+  rewriterOutputs.innerText = "";
   for (let exp of expressions_str) {
     exp = exp.trim();
     if (exp === "" || exp.startsWith(";") || exp.startsWith("#")) {
@@ -160,15 +163,16 @@ function read_and_parse(string) {
 }
 
 function processOneLine(exp, subst_map) {
-  document.getElementById("output").innerText += `\n${exp} -> `;
+  const rewriterOutputs = document.getElementById("rewriter-outputs");
+  rewriterOutputs.innerText += `\n${exp}     -->     `;
   const exp_ = preprocess(exp.trim(), subst_map);
   let ast = new LLLparser(exp_).parse();
   if (numerical(exp)) {
     let res = evaluate(ast);
-    document.getElementById("output").innerText += `${decode(res)}: ${res}`;
+    rewriterOutputs.innerText += `${decode(res)}: ${res}`;
   } else {
     const res = evaluate(ast);
-    document.getElementById("output").innerText += `${res}`;
+    rewriterOutputs.innerText += `${res}`;
   }
 }
 

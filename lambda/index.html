@@ -8,12 +8,15 @@
         background-color: #f4f4f4;
         overflow-x: auto;
       }
+      code:focus {
+        filter: brightness(1.2);
+      }
     </style>
   </head>
   <body>
     <section>
       <h2>Code Section</h2>
-      <pre><code id="code" contenteditable="true">
+      <pre><code id="rewriter-inputs" contenteditable="true">
 
 
         λfx.f(fx)
@@ -92,7 +95,7 @@
         Y(ACC)(ONE)
         Y(ACC)(TWO)
         Y(ACC)(THREE)
-        Y(ACC)(FOUR)
+        ;;Y(ACC)(FOUR)
         ;;FACT=λfn.ISZERO(n)(ONE)(MUL(n)(f(PRED(n))))
         ;;Y(FACT)(ZERO)
         ;;Y(FACT)(ONE)
@@ -104,7 +107,7 @@
       </code></pre>
 
       <button onclick="runCode()">Run</button>
-      <p>Output: <span id="output"></span></p>
+      <p>Output: <span id="rewriter-outputs"></span></p>
     </section>
 
     <script src="rewriter.js"></script>
