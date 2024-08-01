@@ -24,12 +24,10 @@ class Apply {
     while (second !== null) {
       first = second.first;
       if (typeof first === "string") {
-        res = res.length() > 1 ? `(${res})(${first})` : `${res}(${first})`;
+        res = res.length > 1 ? `(${res})(${first})` : `${res}(${first})`;
       } else {
         res =
-          res.length() > 1
-            ? `(${res})(${first.js()})`
-            : `${res}(${first.js()})`;
+          res.length > 1 ? `(${res})(${first.js()})` : `${res}(${first.js()})`;
       }
       second = second.second;
     }
@@ -142,8 +140,9 @@ function read_and_parse(string) {
   const expressions_str = string.split("\n");
 
   const subst_map = {};
-  for (const exp of expressions_str) {
-    if (exp.trim() === "" || exp.startsWith(";") || exp.startsWith("#")) {
+  for (let exp of expressions_str) {
+    exp = exp.trim();
+    if (exp === "" || exp.startsWith(";") || exp.startsWith("#")) {
       continue;
     }
     if (exp.includes("=")) {
@@ -154,19 +153,22 @@ function read_and_parse(string) {
         ast instanceof Apply ? `${evaluate(ast)}` : `${ast}`;
       continue;
     }
-    document.getElementById("output").innerText += `\n${exp} -> `;
-    const exp_ = preprocess(exp.trim(), subst_map);
-    let ast = new LLLparser(exp_).parse();
-    if (numerical(exp)) {
-      //   let res = ast;
-      //   document.getElementById("output").innerText += `${res}`;
-      let res = evaluate(ast);
-      document.getElementById("output").innerText += `${res}: ${res}`;
-    } else {
-      const res = evaluate(ast);
-      //   let res = ast;
-      document.getElementById("output").innerText += `${res}`;
-    }
+    setTimeout(() => {
+      processOneLine(exp, subst_map);
+    }, 0);
+  }
+}
+
+function processOneLine(exp, subst_map) {
+  document.getElementById("output").innerText += `\n${exp} -> `;
+  const exp_ = preprocess(exp.trim(), subst_map);
+  let ast = new LLLparser(exp_).parse();
+  if (numerical(exp)) {
+    let res = evaluate(ast);
+    document.getElementById("output").innerText += `${decode(res)}: ${res}`;
+  } else {
+    const res = evaluate(ast);
+    document.getElementById("output").innerText += `${res}`;
   }
 }
 
@@ -178,23 +180,34 @@ function numerical(exp) {
 class VariableGenerator {
   constructor(vars = new Set()) {
     this.vars = vars;
+    this.hub = this.createHub();
+  }
+
+  *createHub() {
     const base = "abcdefghijklmnopqrstuvwxyz";
-    const hub =
-      base +
-      base.split("").flatMap((char) => {
-        return Array.from({ length: 100 }, (_, i) => char + i);
-      });
-    this.hub = hub[Symbol.iterator]();
+    // 生成单个字母的变量
+    for (let char of base) {
+      yield char;
+    }
+    // 生成带数字的变量
+    for (let char of base) {
+      for (let i = 0; i < 100; i++) {
+        yield char + i;
+      }
+    }
   }
 
   next() {
-    for (const ele of this.hub) {
+    let result = this.hub.next();
+    while (!result.done) {
+      let ele = result.value;
       if (!this.vars.has(ele)) {
         this.vars.add(ele);
         return ele;
       }
+      result = this.hub.next();
     }
-    throw new Error("no more variable");
+    throw new Error("no more variables");
   }
 }
 
@@ -264,7 +277,7 @@ function beta_reduce(exp, env = {}, generator) {
       if (allVariables.has(exp.arg) && get_variables(exp.body).has(key)) {
         exp = alpha_conv(exp, exp.arg, generator);
       }
-      env = key in env ? {} : env;
+      env = key == exp.arg ? {} : env;
     }
     return new Lambda(exp.arg, beta_reduce(exp.body, env, generator));
   }

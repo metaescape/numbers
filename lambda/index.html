@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Editable Code Execution</title>
+    <style>
+      code {
+        font-family: monospace;
+        background-color: #f4f4f4;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <h2>Code Section</h2>
+      <pre><code id="code" contenteditable="true">
+
+
+        λfx.f(fx)
+        (λfx.f(fx))(λfx.f(fx))
+        I = λx.x
+        K = λxy.x
+        KI = KI
+        C = λfxy.fyx
+        S = λxyz.xz(yz)
+        NOT = C
+        TRUE = K
+        FALSE = KI
+        AND = λab.aba
+        OR = λab.aab
+        CONS = λabs.sab
+        CAR = λp.pK
+        CDR = λp.pKI
+        XOR = λab.OR(AND(NOT(a))(b))(AND(a)(NOT(b)))
+        CK
+        CKI
+        SKK
+        NOT(TRUE)
+        NOT(FALSE)
+        AND(TRUE)(TRUE)
+        AND(TRUE)(FALSE)
+        AND(FALSE)(TRUE)
+        AND(FALSE)(FALSE)
+        OR(TRUE)(TRUE)
+        OR(TRUE)(FALSE)
+        OR(FALSE)(TRUE)
+        OR(FALSE)(FALSE)
+        CONS(TRUE)(FALSE)
+        CAR(CONS(TRUE)(FALSE))
+        CDR(CONS(TRUE)(FALSE))
+        XOR(TRUE)(TRUE)
+        XOR(TRUE)(FALSE)
+        XOR(FALSE)(TRUE)
+        XOR(FALSE)(FALSE)
+        
+        ZERO = λfx.x
+        ONE = λfx.fx
+        TWO = λfx.f(fx)
+        THREE = λfx.f(f(fx))
+        FOUR = λfx.f(f(f(fx)))
+        FIVE = λfx.f(f(f(f(fx))))
+        SUCC = λnfx.f(nfx)
+        ADD = λmn.m(SUCC)(n)
+        ADD(ONE)(TWO)
+        ADD(TWO)(THREE)
+        ADD(FIVE)(FOUR)
+        MUL = λmn.m(ADD(n))(ZERO)
+        MUL(ZERO)(THREE)
+        MUL(TWO)(THREE)
+        MUL(THREE)(FOUR)
+        EXP = λmn.n(m)
+        EXP(TWO)(THREE)
+        EXP(THREE)(TWO)
+        
+        ISZERO = λn.n(K(FALSE))(TRUE)
+        ISZERO(ZERO)
+        ISZERO(ONE)
+        ISZERO(TWO)
+        LEQ = λmn.ISZERO(SUB(n)(m))
+        
+        T = λp.CONS(CDR(p))(SUCC(CDR(p)))
+        PRED = λn.CAR(n(T)(CONS(ZERO)(ZERO)))
+        PRED(ONE)
+        PRED(TWO)
+        PRED(THREE)
+        PRED(FOUR)
+        Y = λf.(λx.f(xx))(λx.f(xx))
+        ACC = λfn.ISZERO(n)(ZERO)(ADD(n)(f(PRED(n))))
+        ISZERO(ZERO)(ONE)(TWO)
+        ISZERO(ONE)(ONE)(TWO)
+        Y(ACC)(ZERO)
+        Y(ACC)(ONE)
+        Y(ACC)(TWO)
+        Y(ACC)(THREE)
+        Y(ACC)(FOUR)
+        ;;FACT=λfn.ISZERO(n)(ONE)(MUL(n)(f(PRED(n))))
+        ;;Y(FACT)(ZERO)
+        ;;Y(FACT)(ONE)
+        ;;Y(FACT)(TWO)
+        ;;Y(FACT)(THREE)
+      
+       
+        
+      </code></pre>
+
+      <button onclick="runCode()">Run</button>
+      <p>Output: <span id="output"></span></p>
+    </section>
+
+    <script src="rewriter.js"></script>
+  </body>
+</html>
