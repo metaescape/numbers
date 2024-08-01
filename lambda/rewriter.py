@@ -65,10 +65,8 @@ def tree_equal(ast1, ast2):
             ast1.second, ast2.second
         )
     if isinstance(ast1, Lambda) and isinstance(ast2, Lambda):
-        return tree_equal(ast1.body, ast2.body)
-    if type(ast1) is str and type(ast2) is str:
-        return ast1 == ast2
-    return False
+        return ast1.arg == ast2.arg and tree_equal(ast1.body, ast2.body)
+    return ast1 == ast2
 
 
 class LLLparser:
@@ -240,7 +238,7 @@ def beta_reduce(exp, env={}, generator=None):
             if exp.arg in all_variables and key in get_variables(exp.body):
                 exp = alpha_conv(exp, exp.arg, generator)
 
-            env = {key: value for key, value in env.items() if exp.arg != key}
+            env = {} if key == exp.arg else env
         return Lambda(exp.arg, beta_reduce(exp.body, env, generator))
 
     if isinstance(exp, Apply):
