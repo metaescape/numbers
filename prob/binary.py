@@ -27,6 +27,42 @@ def joint_prob(assignments):
     )
 
 
+def intervention_prob_a1(assignments):
+    """
+    P(X|do(A=1))
+    """
+    u, a, m, y = (
+        assignments["U"],
+        assignments["A"],
+        assignments["M"],
+        assignments["Y"],
+    )
+    return (
+        bernoulli(u)
+        * bernoulli(a, 1)
+        * bernoulli(m, 0.5 + 0.1)
+        * bernoulli(y, m / 2 + u / 4)
+    )
+
+
+def intervention_prob_a0(assignments):
+    """
+    P(X|do(A=0))
+    """
+    u, a, m, y = (
+        assignments["U"],
+        assignments["A"],
+        assignments["M"],
+        assignments["Y"],
+    )
+    return (
+        bernoulli(u)
+        * bernoulli(a, 0)
+        * bernoulli(m, 0.5)
+        * bernoulli(y, m / 2 + u / 4)
+    )
+
+
 def print_joint_table(prob):
     for u in range(2):
         for a in range(2):
@@ -75,3 +111,15 @@ if __name__ == "__main__":
     print(conditional_prob(joint_prob, {"Y": 1}))
     print(conditional_prob(joint_prob, {"Y": 1}, {"M": 0, "A": 0}))
     print(conditional_prob(joint_prob, {"Y": 1}, {"M": 0, "A": 1}))
+
+    # P(Y=1|do(A=1))
+    print(conditional_prob(intervention_prob_a1, {"Y": 1}))
+
+    # P(Y=1|do(A=0))
+    print(conditional_prob(intervention_prob_a0, {"Y": 1}))
+
+    # P(Y=0|do(A=1))
+    print(conditional_prob(intervention_prob_a1, {"Y": 0}))
+
+    # P(Y=0|do(A=0))
+    print(conditional_prob(intervention_prob_a0, {"Y": 0}))
