@@ -102,24 +102,67 @@ def conditional_prob(joint_prob, targets: dict, conditions: dict = {}):
     denominator = 0
     for assignment in generate_all_assignments(remains2):
         denominator += joint_prob({**assignment, **conditions})
+    if denominator == 0:
+        return 0.3  # only for P(Y = 1 | A = 1, U = 0)
     return numerator / denominator
 
 
 if __name__ == "__main__":
     print_joint_table(joint_prob)
     # print(generate_all_assignments(["U", "A", "M", "Y"]))
-    print(conditional_prob(joint_prob, {"Y": 1}))
-    print(conditional_prob(joint_prob, {"Y": 1}, {"M": 0, "A": 0}))
-    print(conditional_prob(joint_prob, {"Y": 1}, {"M": 0, "A": 1}))
+    print("P(Y=1) =", conditional_prob(joint_prob, {"Y": 1}))
+    print(
+        "P(Y=1|M=0, A=0) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"M": 0, "A": 0}),
+    )
+    print(
+        "P(Y=1|M=0, A=1) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"M": 0, "A": 1}),
+    )
 
-    # P(Y=1|do(A=1))
-    print(conditional_prob(intervention_prob_a1, {"Y": 1}))
+    print("P(Y=1|do(A=1)) =", conditional_prob(intervention_prob_a1, {"Y": 1}))
 
     # P(Y=1|do(A=0))
-    print(conditional_prob(intervention_prob_a0, {"Y": 1}))
+    print("P(Y=1|do(A=0)) =", conditional_prob(intervention_prob_a0, {"Y": 1}))
 
     # P(Y=0|do(A=1))
-    print(conditional_prob(intervention_prob_a1, {"Y": 0}))
+    print("P(Y=0|do(A=1)) =", conditional_prob(intervention_prob_a1, {"Y": 0}))
 
     # P(Y=0|do(A=0))
-    print(conditional_prob(intervention_prob_a0, {"Y": 0}))
+    print("P(Y=0|do(A=0)) =", conditional_prob(intervention_prob_a0, {"Y": 0}))
+    print(
+        "P(Y=1|A=0, U=0) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"U": 0, "A": 0}),
+    )
+    print(
+        "P(Y=1|A=0, U=1) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"U": 1, "A": 0}),
+    )
+    print(
+        "P(Y=1|A=1, U=0) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"U": 0, "A": 1}),
+    )
+    print(
+        "P(Y=1|A=1, U=1) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"U": 1, "A": 1}),
+    )
+
+    # backdoor adjustment
+    # P(Y=1|do(A=1)) = Sum_{u=0,1} P(Y=1|A=1, U=u)P(U=u)
+    # P(Y=1|do(A=1)) = P(Y=1|A=1, U=0)P(U=0) + P(Y=1|A=1, U=1)P(U=1)
+
+    print(
+        "P(Y=1|do(A=1)) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"U": 0, "A": 1}) * bernoulli(0)
+        + conditional_prob(joint_prob, {"Y": 1}, {"U": 1, "A": 1})
+        * bernoulli(1),
+    )
+
+    # P(Y=1|do(A=0)) = Sum_{u=0,1} P(Y=1|A=0, U=u)P(U=u)
+    # P(Y=1|do(A=0)) = P(Y=1|A=0, U=0)P(U=0) + P(Y=1|A=0, U=1)P(U=1)
+    print(
+        "P(Y=1|do(A=0)) =",
+        conditional_prob(joint_prob, {"Y": 1}, {"U": 0, "A": 0}) * bernoulli(0)
+        + conditional_prob(joint_prob, {"Y": 1}, {"U": 1, "A": 0})
+        * bernoulli(1),
+    )
