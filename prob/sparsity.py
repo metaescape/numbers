@@ -32,8 +32,7 @@ def plot_graph(g):
 
     pos = nx.spring_layout(g)
     nx.draw(g, pos, with_labels=True, node_size=700)
-    labels = nx.get_edge_attributes(g, "weight")
-    nx.draw_networkx_edge_labels(g, pos, edge_labels=labels)
+
     plt.show()
 
 
