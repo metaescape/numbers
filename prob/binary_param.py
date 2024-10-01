@@ -152,7 +152,7 @@ if __name__ == "__main__":
     # P(Y=1|do(A=1)) = P(Y=1|A=1, U=0)P(U=0) + P(Y=1|A=1, U=1)P(U=1)
 
     print(
-        "P(Y=1|do(A=1)) =",
+        "Backdoor: P(Y=1|do(A=1)) =",
         conditional_prob(joint_prob, {"Y": 1}, {"U": 0, "A": 1}) * bernoulli(0)
         + conditional_prob(joint_prob, {"Y": 1}, {"U": 1, "A": 1})
         * bernoulli(1),
@@ -161,8 +161,37 @@ if __name__ == "__main__":
     # P(Y=1|do(A=0)) = Sum_{u=0,1} P(Y=1|A=0, U=u)P(U=u)
     # P(Y=1|do(A=0)) = P(Y=1|A=0, U=0)P(U=0) + P(Y=1|A=0, U=1)P(U=1)
     print(
-        "P(Y=1|do(A=0)) =",
+        "Backdoor: P(Y=1|do(A=0)) =",
         conditional_prob(joint_prob, {"Y": 1}, {"U": 0, "A": 0}) * bernoulli(0)
         + conditional_prob(joint_prob, {"Y": 1}, {"U": 1, "A": 0})
         * bernoulli(1),
+    )
+
+    # Frontdoor adjustment
+    # P(Y=1|do(A=1)) = Sum_{m=0,1} P(M=m|A=1)Sum_{a=0,1} P(Y=1|A=a, M=m)P(A=a)
+    print(
+        "Frontdoor: P(Y=1|do(A=1)) =",
+        sum(
+            conditional_prob(joint_prob, {"M": m}, {"A": 1})
+            * sum(
+                conditional_prob(joint_prob, {"Y": 1}, {"M": m, "A": a})
+                * conditional_prob(joint_prob, {"A": a})
+                for a in range(2)
+            )
+            for m in range(2)
+        ),
+    )
+
+    # P(Y=1|do(A=0)) = Sum_{m=0,1} P(M=m|A=0)Sum_{a=0,1} P(Y=1|A=a, M=m)P(A=a)
+    print(
+        "Frontdoor: P(Y=1|do(A=0)) =",
+        sum(
+            conditional_prob(joint_prob, {"M": m}, {"A": 0})
+            * sum(
+                conditional_prob(joint_prob, {"Y": 1}, {"M": m, "A": a})
+                * conditional_prob(joint_prob, {"A": a})
+                for a in range(2)
+            )
+            for m in range(2)
+        ),
     )
